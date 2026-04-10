@@ -1,5 +1,4 @@
 import React from 'react';
-import { Ionicons } from '@expo/vector-icons';
 import {
   View,
   Text,
@@ -9,34 +8,31 @@ import {
   SafeAreaView,
   ScrollView,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-
-const ORANGE = '#F56E0F';
-const WHITE = '#FFFFFF';
-const LIGHT_BG = '#F8F9FA';
-const TEXT_MAIN = '#111111';
-const TEXT_MUTED = '#666666';
+import { Car, Wrench, ShieldCheck, MapPin } from 'lucide-react-native';
+import { Colors, Spacing, CustomBorders, Shadows } from '../constants/theme';
 
 export default function WelcomeScreen() {
   const router = useRouter();
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor={LIGHT_BG} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.light.background} />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── HERO IMAGE ── */}
-        <View style={styles.imageContainer}>
-          <Image
-            source={{ uri: 'https://www.cisworld.lk/storage/categories/vehicle-management.jpg' }}
-            style={styles.heroImage}
-            contentFit="cover"
-            transition={500}
-          />
+        {/* ── HERO GRAPHIC (SVG instead of Image) ── */}
+        <View style={styles.heroContainer}>
+          <View style={styles.heroCircleLarger}>
+             <View style={styles.heroCircleSmaller}>
+                <Car size={64} color={Colors.light.primary} strokeWidth={1.5} />
+                <View style={styles.wrenchBadge}>
+                  <Wrench size={16} color={Colors.light.surface} strokeWidth={2.5} />
+                </View>
+             </View>
+          </View>
         </View>
 
         <View style={styles.contentContainer}>
@@ -55,18 +51,18 @@ export default function WelcomeScreen() {
             </Text>
           </View>
 
-          {/* ── STATS ── */}
+          {/* ── STATS / FEATURES ── */}
           <View style={styles.statsRow}>
             {[
-              { value: '500+', label: 'Garages' },
-              { value: '12K+', label: 'Vehicles' },
-              { value: '4.9', label: 'Rating', icon: 'star.fill' },
+              { value: '500+', label: 'Garages', icon: MapPin },
+              { value: '12K+', label: 'Vehicles', icon: Car },
+              { value: 'Secured', label: 'By Asgardeo', icon: ShieldCheck },
             ].map((s, i) => (
               <React.Fragment key={s.label}>
                 <View style={styles.statCell}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                    <s.icon size={18} color={Colors.light.primary} style={{ marginRight: 6 }} />
                     <Text style={styles.statValue}>{s.value}</Text>
-                    {s.icon && <Ionicons name="star" size={18} color={TEXT_MAIN} style={{ marginLeft: 2 }} />}
                   </View>
                   <Text style={styles.statLabel}>{s.label}</Text>
                 </View>
@@ -102,24 +98,48 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: LIGHT_BG,
+    backgroundColor: Colors.light.background,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 40,
+    paddingBottom: Spacing.five,
   },
 
-  /* Image */
-  imageContainer: {
+  /* Hero SVG Graphic */
+  heroContainer: {
     width: '100%',
-    height: 220,
-    marginTop: 80,
-    marginBottom: 24,
-    overflow: 'hidden',
+    height: 260,
+    marginTop: Spacing.six,
+    marginBottom: Spacing.three,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  heroImage: {
-    width: '100%',
-    height: '100%',
+  heroCircleLarger: {
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: Colors.light.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroCircleSmaller: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: Colors.light.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Shadows.md,
+  },
+  wrenchBadge: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: Colors.light.primary,
+    padding: 8,
+    borderRadius: CustomBorders.radius.full,
+    borderWidth: 3,
+    borderColor: Colors.light.surface,
   },
 
   /* Content */
@@ -133,24 +153,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: '#FFF4EC',
-    paddingHorizontal: 16,
+    backgroundColor: Colors.light.primaryMuted,
+    paddingHorizontal: Spacing.two,
     paddingVertical: 10,
-    borderRadius: 30,
-    marginBottom: 24,
-    marginHorizontal: 24,
+    borderRadius: CustomBorders.radius.full,
+    marginBottom: Spacing.four,
+    marginHorizontal: Spacing.four,
     borderWidth: 1,
-    borderColor: 'rgba(245, 110, 15, 0.15)',
-    gap: 8,
+    borderColor: 'rgba(249, 115, 22, 0.1)',
+    gap: Spacing.one,
   },
   badgeDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: ORANGE,
+    backgroundColor: Colors.light.primary,
   },
   badgeText: {
-    color: ORANGE,
+    color: Colors.light.primary,
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 0.5,
@@ -158,104 +178,98 @@ const styles = StyleSheet.create({
 
   /* Headline */
   headlineBlock: {
-    marginBottom: 32,
-    paddingHorizontal: 24,
+    marginBottom: Spacing.four,
+    paddingHorizontal: Spacing.four,
   },
   h1: {
     fontSize: 42,
     fontWeight: '900',
-    color: TEXT_MAIN,
+    color: Colors.light.text,
     letterSpacing: -1,
     lineHeight: 48,
   },
   h1Orange: {
     fontSize: 42,
     fontWeight: '900',
-    color: ORANGE,
+    color: Colors.light.primary,
     letterSpacing: -1,
     lineHeight: 48,
-    marginBottom: 16,
+    marginBottom: Spacing.two,
   },
   sub: {
     fontSize: 15,
-    color: TEXT_MUTED,
+    color: Colors.light.textMuted,
     lineHeight: 24,
     fontWeight: '500',
-    paddingRight: 20,
+    paddingRight: Spacing.three,
   },
 
   /* Stats */
   statsRow: {
     flexDirection: 'row',
-    backgroundColor: WHITE,
-    borderRadius: 20,
-    paddingVertical: 20,
-    marginBottom: 32,
-    marginHorizontal: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.05,
-    shadowRadius: 20,
-    elevation: 4,
+    backgroundColor: Colors.light.surface,
+    borderRadius: CustomBorders.radius.lg,
+    paddingVertical: Spacing.four,
+    marginBottom: Spacing.five,
+    marginHorizontal: Spacing.four,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.02)',
+    borderColor: Colors.light.border,
+    ...Shadows.md,
   },
   statCell: {
     flex: 1,
     alignItems: 'center',
+    paddingHorizontal: Spacing.one,
   },
   statValue: {
-    fontSize: 24,
-    fontWeight: '900',
-    color: TEXT_MAIN,
+    fontSize: 18,
+    fontWeight: '800',
+    color: Colors.light.text,
     letterSpacing: -0.5,
   },
   statLabel: {
     fontSize: 11,
-    color: TEXT_MUTED,
+    color: Colors.light.textMuted,
     fontWeight: '700',
-    marginTop: 4,
+    marginTop: 2,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
   statSep: {
     width: 1,
-    marginVertical: 8,
-    backgroundColor: 'rgba(0,0,0,0.06)',
+    marginVertical: Spacing.two,
+    backgroundColor: Colors.light.border,
   },
 
   /* Buttons */
   btnGroup: {
-    gap: 16,
-    paddingHorizontal: 24,
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.four,
   },
   btnPrimary: {
-    backgroundColor: ORANGE,
-    paddingVertical: 17,
-    borderRadius: 16,
+    backgroundColor: Colors.light.primary,
+    paddingVertical: 18,
+    borderRadius: CustomBorders.radius.lg,
     alignItems: 'center',
-    shadowColor: ORANGE,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
+    ...Shadows.lg,
+    shadowColor: Colors.light.primary,
   },
   btnPrimaryText: {
-    color: WHITE,
+    color: Colors.light.surface,
     fontSize: 16,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
   btnSecondary: {
-    backgroundColor: WHITE,
-    paddingVertical: 17,
-    borderRadius: 16,
+    backgroundColor: Colors.light.surface,
+    paddingVertical: 18,
+    borderRadius: CustomBorders.radius.lg,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(0,0,0,0.05)',
+    borderColor: Colors.light.border,
   },
   btnSecondaryText: {
-    color: TEXT_MAIN,
+    color: Colors.light.text,
     fontSize: 16,
     fontWeight: '800',
     letterSpacing: 0.5,

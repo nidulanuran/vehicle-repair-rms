@@ -2,39 +2,29 @@ import React from 'react';
 import {
   View,
   Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, Href } from 'expo-router';
+import { Car, ChevronRight, Calendar, Settings } from 'lucide-react-native';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
-import { Ionicons } from '@expo/vector-icons';
-
-const BRAND = '#FF7300';
-const WHITE = '#FFFFFF';
-const BG = '#F4F5F7';
-const CARD = '#FFFFFF';
-const TEXT = '#111827';
-const MUTED = '#6B7280';
-const BORDER = '#E5E7EB';
+import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const { theme } = useUnistyles();
 
   const handleLogout = () => {
-    router.replace('/auth/login' as any);
+    router.replace('/auth/login' as Href<string>);
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor={WHITE} />
-
+    <ScreenWrapper>
       {/* HEADER */}
       <View style={styles.header}>
-        <View>
-
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.greeting}>Good Morning,</Text>
           <Text style={styles.userName}>Seneja Thehansi</Text>
         </View>
         <TouchableOpacity style={styles.avatarBox} onPress={handleLogout} activeOpacity={0.7}>
@@ -43,14 +33,19 @@ export default function DashboardScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-
         {/* STATS ROW */}
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
+            <View style={styles.statIconBox}>
+                <Car size={18} color={theme.colors.brand} />
+            </View>
             <Text style={styles.statValue}>2</Text>
             <Text style={styles.statLabel}>Vehicles</Text>
           </View>
           <View style={styles.statCard}>
+            <View style={[styles.statIconBox, styles.statIconBoxSuccess]}>
+                <Calendar size={18} color={theme.colors.successText} />
+            </View>
             <Text style={styles.statValue}>1</Text>
             <Text style={styles.statLabel}>Active Appt.</Text>
           </View>
@@ -60,7 +55,7 @@ export default function DashboardScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>My Vehicles</Text>
-            <TouchableOpacity onPress={() => router.push('/tabs/vehicles' as any)}>
+            <TouchableOpacity onPress={() => router.push('/tabs/vehicles' as Href<string>)}>
               <Text style={styles.linkText}>View All</Text>
             </TouchableOpacity>
           </View>
@@ -68,17 +63,17 @@ export default function DashboardScreen() {
           <TouchableOpacity
             style={styles.card}
             activeOpacity={0.7}
-            onPress={() => router.push('/tabs/vehicles/1' as any)}
+            onPress={() => router.push('/tabs/vehicles' as Href<string>)}
           >
             <View style={styles.cardRow}>
               <View style={styles.iconBox}>
-                <Ionicons name="car-sport" size={24} color={TEXT} />
+                <Car size={24} color={theme.colors.text} />
               </View>
               <View style={styles.cardInfo}>
                 <Text style={styles.cardTitle}>Honda Civic 2020</Text>
                 <Text style={styles.cardSubtitle}>CBA-1234 • Last Serviced: Oct 12, 2024</Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+              <ChevronRight size={20} color={theme.colors.muted} />
             </View>
           </TouchableOpacity>
         </View>
@@ -87,7 +82,7 @@ export default function DashboardScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Upcoming Appointments</Text>
-            <TouchableOpacity onPress={() => router.push('/tabs/appointments' as any)}>
+            <TouchableOpacity onPress={() => router.push('/tabs/schedule' as Href<string>)}>
               <Text style={styles.linkText}>View All</Text>
             </TouchableOpacity>
           </View>
@@ -104,87 +99,127 @@ export default function DashboardScreen() {
             <Text style={styles.apptTitle}>Full Service & Oil Change</Text>
             <Text style={styles.apptSub}>For Honda Civic (CBA-1234)</Text>
             <View style={styles.garageBox}>
-              <Text style={styles.garageName}>AutoCare Garage Colombo</Text>
-              <Text style={styles.garageAddress}>123 Main St, Colombo 03</Text>
+              <Settings size={16} color={theme.colors.muted} style={styles.garageIcon} />
+              <View>
+                <Text style={styles.garageName}>AutoCare Garage Colombo</Text>
+                <Text style={styles.garageAddress}>123 Main St, Colombo 03</Text>
+              </View>
             </View>
           </View>
         </View>
-
       </ScrollView>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: BG },
-
+const styles = StyleSheet.create((theme) => ({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: WHITE,
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 20,
+    backgroundColor: theme.colors.surface,
+    paddingHorizontal: theme.spacing.md,
+    paddingTop: theme.spacing.xl,
+    paddingBottom: theme.spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: theme.colors.border,
   },
-  greeting: { fontSize: 13, color: MUTED, fontWeight: '600', marginBottom: 2 },
-  userName: { fontSize: 20, color: TEXT, fontWeight: '800', letterSpacing: -0.3 },
+  headerTextContainer: { flex: 1 },
+  greeting: { 
+    fontSize: theme.fonts.sizes.xs, 
+    color: theme.colors.muted, 
+    fontWeight: '600', 
+    marginBottom: 2 
+  },
+  userName: { 
+    fontSize: theme.fonts.sizes.xl, 
+    color: theme.colors.text, 
+    fontWeight: '800', 
+    letterSpacing: -0.3 
+  },
   avatarBox: {
     width: 44,
     height: 44,
-    borderRadius: 8,
-    backgroundColor: '#FFF4EC',
+    borderRadius: theme.radii.md,
+    backgroundColor: theme.colors.brandSoft,
     borderWidth: 1,
-    borderColor: 'rgba(255,115,0,0.2)',
+    borderColor: 'rgba(245, 110, 15, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { fontSize: 16, fontWeight: '800', color: BRAND },
-
-  scroll: {
-    padding: 20,
-    paddingBottom: 40,
+  avatarText: { 
+    fontSize: theme.fonts.sizes.md, 
+    fontWeight: '800', 
+    color: theme.colors.brand 
   },
-
+  scroll: {
+    padding: theme.spacing.md,
+    paddingBottom: 100,
+  },
   statsGrid: {
     flexDirection: 'row',
-    gap: 16,
-    marginBottom: 28,
+    gap: theme.spacing.md,
+    marginBottom: theme.spacing.xl,
   },
   statCard: {
     flex: 1,
-    backgroundColor: CARD,
-    borderRadius: 12,
-    padding: 20,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radii.lg,
+    padding: theme.spacing.md,
     borderWidth: 1,
-    borderColor: BORDER,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
+    borderColor: theme.colors.border,
     elevation: 2,
   },
-  statValue: { fontSize: 32, fontWeight: '900', color: TEXT, marginBottom: 4 },
-  statLabel: { fontSize: 12, color: MUTED, fontWeight: '600', textTransform: 'uppercase' },
-
-  section: { marginBottom: 32 },
+  statIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: theme.radii.sm,
+    backgroundColor: theme.colors.brandSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  statIconBoxSuccess: {
+    backgroundColor: theme.colors.successBackground,
+  },
+  statValue: { 
+    fontSize: theme.fonts.sizes.xxxl, 
+    fontWeight: '900', 
+    color: theme.colors.text, 
+    marginBottom: 4 
+  },
+  statLabel: { 
+    fontSize: theme.fonts.sizes.xs, 
+    color: theme.colors.muted, 
+    fontWeight: '600', 
+    textTransform: 'uppercase' 
+  },
+  section: { 
+    marginBottom: theme.spacing.xl 
+  },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    marginBottom: 16,
+    marginBottom: theme.spacing.sm,
   },
-  sectionTitle: { fontSize: 18, fontWeight: '800', color: TEXT },
-  linkText: { fontSize: 14, fontWeight: '700', color: BRAND },
-
+  sectionTitle: { 
+    fontSize: theme.fonts.sizes.lg, 
+    fontWeight: '800', 
+    color: theme.colors.text 
+  },
+  linkText: { 
+    fontSize: theme.fonts.sizes.sm, 
+    fontWeight: '700', 
+    color: theme.colors.brand 
+  },
   card: {
-    backgroundColor: CARD,
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radii.lg,
+    padding: theme.spacing.sm,
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: theme.colors.border,
+    elevation: 2,
   },
   cardRow: {
     flexDirection: 'row',
@@ -193,27 +228,33 @@ const styles = StyleSheet.create({
   iconBox: {
     width: 48,
     height: 48,
-    borderRadius: 8,
-    backgroundColor: '#F3F4F6',
+    borderRadius: theme.radii.sm,
+    backgroundColor: theme.colors.background,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
+    marginRight: theme.spacing.sm,
   },
-  iconText: { fontSize: 24 },
   cardInfo: { flex: 1 },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: TEXT, marginBottom: 4 },
-  cardSubtitle: { fontSize: 13, color: MUTED, fontWeight: '500' },
-  chevron: { fontSize: 22, color: '#9CA3AF', fontWeight: 'bold' },
-
-  /* Appt Card */
+  cardTitle: { 
+    fontSize: theme.fonts.sizes.md, 
+    fontWeight: '700', 
+    color: theme.colors.text, 
+    marginBottom: 4 
+  },
+  cardSubtitle: { 
+    fontSize: theme.fonts.sizes.sm, 
+    color: theme.colors.muted, 
+    fontWeight: '500' 
+  },
   apptCard: {
-    backgroundColor: CARD,
-    borderRadius: 12,
-    padding: 20,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radii.lg,
+    padding: theme.spacing.md,
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: theme.colors.border,
     borderLeftWidth: 4,
-    borderLeftColor: BRAND,
+    borderLeftColor: theme.colors.brand,
+    elevation: 2,
   },
   apptHeader: {
     flexDirection: 'row',
@@ -223,28 +264,65 @@ const styles = StyleSheet.create({
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ECFDF5',
+    backgroundColor: theme.colors.successBackground,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 20,
+    borderRadius: theme.radii.full,
     gap: 6,
   },
-  statusDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#10B981' },
-  statusText: { fontSize: 12, fontWeight: '700', color: '#047857' },
-  apptDate: { fontSize: 13, fontWeight: '700', color: TEXT },
-
-  divider: { height: 1, backgroundColor: BORDER, marginVertical: 16 },
-
-  apptTitle: { fontSize: 17, fontWeight: '800', color: TEXT, marginBottom: 4 },
-  apptSub: { fontSize: 14, color: MUTED, fontWeight: '500', marginBottom: 16 },
-
-  garageBox: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: BORDER,
+  statusDot: { 
+    width: 6, 
+    height: 6, 
+    borderRadius: theme.radii.full, 
+    backgroundColor: theme.colors.successText 
   },
-  garageName: { fontSize: 14, fontWeight: '700', color: TEXT, marginBottom: 2 },
-  garageAddress: { fontSize: 13, color: MUTED },
-});
+  statusText: { 
+    fontSize: theme.fonts.sizes.xs, 
+    fontWeight: '700', 
+    color: theme.colors.successText 
+  },
+  apptDate: { 
+    fontSize: theme.fonts.sizes.sm, 
+    fontWeight: '700', 
+    color: theme.colors.text 
+  },
+  divider: { 
+    height: 1, 
+    backgroundColor: theme.colors.border, 
+    marginVertical: theme.spacing.sm 
+  },
+  apptTitle: { 
+    fontSize: theme.fonts.sizes.md, 
+    fontWeight: '800', 
+    color: theme.colors.text, 
+    marginBottom: 4 
+  },
+  apptSub: { 
+    fontSize: theme.fonts.sizes.sm, 
+    color: theme.colors.muted, 
+    fontWeight: '500', 
+    marginBottom: theme.spacing.sm 
+  },
+  garageBox: {
+    flexDirection: 'row',
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.radii.md,
+    padding: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  garageIcon: {
+    marginRight: theme.spacing.sm,
+    marginTop: 2,
+  },
+  garageName: { 
+    fontSize: theme.fonts.sizes.sm, 
+    fontWeight: '700', 
+    color: theme.colors.text, 
+    marginBottom: 2 
+  },
+  garageAddress: { 
+    fontSize: theme.fonts.sizes.sm, 
+    color: theme.colors.muted 
+  },
+}));
