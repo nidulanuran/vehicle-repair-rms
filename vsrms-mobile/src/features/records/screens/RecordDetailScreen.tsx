@@ -1,79 +1,129 @@
 import React from 'react';
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
-import { Calendar, Wrench, DollarSign, FileText } from 'lucide-react-native';
+import { View, Text, ScrollView, ActivityIndicator, StatusBar, TouchableOpacity } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Calendar, Wrench, DollarSign, FileText, ChevronLeft, Milestone, User } from 'lucide-react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { useRecord } from '../queries/queries';
 import { handleApiError } from '@/services/error.handler';
+import { ErrorScreen } from '@/components/feedback/ErrorScreen';
 
 export function RecordDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: record, isLoading, isError, error } = useRecord(id!);
+  const router = useRouter();
   const { theme } = useUnistyles();
-
-  if (isLoading) return <ActivityIndicator style={{ flex: 1 }} size="large" />;
-  if (isError) return <Text style={{ color: 'red', padding: 20 }}>{handleApiError(error)}</Text>;
-  if (!record) return <Text style={{ padding: 20 }}>Record not found</Text>;
+  const { data: record, isLoading, isError, error, refetch } = useRecord(id!);
 
   return (
-    <ScreenWrapper scroll>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Service Details</Text>
-          <Text style={styles.date}>{new Date(record.serviceDate).toLocaleDateString()}</Text>
+    <ScreenWrapper bg="#1A1A2E">
+      <StatusBar barStyle="light-content" backgroundColor="#1A1A2E" />
+
+      {/* ── DARK TOP SECTION ── */}
+      <View style={styles.topSection}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+            <ChevronLeft size={24} color="#FFFFFF" strokeWidth={2.5} />
+          </TouchableOpacity>
+          <View>
+            <Text style={styles.headerSub}>Technical Archive</Text>
+            <Text style={styles.headerTitle}>Record Details</Text>
+          </View>
         </View>
 
-        <View style={styles.card}>
-          <View style={styles.item}>
-             <Calendar size={20} color={theme.colors.brand} />
-             <View>
-               <Text style={styles.label}>Date</Text>
-               <Text style={styles.value}>{new Date(record.serviceDate).toLocaleDateString()}</Text>
-             </View>
-          </View>
+        <View style={styles.decCircle1} />
+        <View style={styles.decCircle2} />
+      </View>
 
-          <View style={styles.item}>
-             <Wrench size={20} color={theme.colors.brand} />
-             <View>
-               <Text style={styles.label}>Description</Text>
-               <Text style={styles.value}>{record.description}</Text>
-             </View>
-          </View>
+      {/* ── WHITE CARD SECTION ── */}
+      <View style={styles.mainCard}>
+        {isLoading && !record ? (
+           <View style={styles.centered}><ActivityIndicator size="large" color="#F56E0F" /></View>
+        ) : isError ? (
+           <ErrorScreen onRetry={refetch} variant="inline" message={handleApiError(error)} />
+        ) : !record ? (
+           <View style={styles.centered}><Text style={{ color: '#9CA3AF' }}>Record not found</Text></View>
+        ) : (
+          <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+            
+            <View style={styles.infoCard}>
+              <View style={styles.infoRow}>
+                 <View style={[styles.iconBox, { backgroundColor: '#EFF6FF' }]}>
+                    <Calendar size={20} color="#3B82F6" />
+                 </View>
+                 <View style={styles.infoContent}>
+                    <Text style={styles.label}>Service Date</Text>
+                    <Text style={styles.value}>{new Date(record.serviceDate).toLocaleDateString(undefined, { dateStyle: 'long' })}</Text>
+                 </View>
+              </View>
 
-          {record.cost && (
-            <View style={styles.item}>
-               <DollarSign size={20} color={theme.colors.brand} />
-               <View>
-                 <Text style={styles.label}>Total Cost</Text>
-                 <Text style={styles.value}>LKR {record.cost.toLocaleString()}</Text>
-               </View>
+              <View style={styles.divider} />
+
+              <View style={styles.infoRow}>
+                 <View style={[styles.iconBox, { backgroundColor: '#FDF2F8' }]}>
+                    <User size={20} color="#DB2777" />
+                 </View>
+                 <View style={styles.infoContent}>
+                    <Text style={styles.label}>Performed By</Text>
+                    <Text style={styles.value}>{record.technicianName || 'Garage Staff'}</Text>
+                 </View>
+              </View>
+
+              {record.mileageAtService && (
+                <>
+                  <View style={styles.divider} />
+                  <View style={styles.infoRow}>
+                    <View style={[styles.iconBox, { backgroundColor: '#F0FDF4' }]}>
+                        <Milestone size={20} color="#059669" />
+                    </View>
+                    <View style={styles.infoContent}>
+                        <Text style={styles.label}>Odometer Reading</Text>
+                        <Text style={styles.value}>{record.mileageAtService.toLocaleString()} km</Text>
+                    </View>
+                  </View>
+                </>
+              )}
             </View>
-          )}
-        </View>
 
-        {record.partsReplaced && record.partsReplaced.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Parts Replaced</Text>
-            <View style={styles.list}>
-              {record.partsReplaced.map((part, index) => (
-                <View key={index} style={styles.listItem}>
-                  <View style={styles.bullet} />
-                  <Text style={styles.listItemText}>{part}</Text>
+            <View style={styles.sectionHeader}>
+               <Wrench size={18} color="#1A1A2E" strokeWidth={2.5} />
+               <Text style={styles.sectionTitle}>Main Work Performed</Text>
+            </View>
+            <View style={styles.descriptionBox}>
+               <Text style={styles.descriptionText}>{record.workDone}</Text>
+            </View>
+
+            {record.totalCost && (
+              <View style={styles.costHighlight}>
+                 <View style={styles.costHeader}>
+                    <DollarSign size={16} color="#059669" />
+                    <Text style={styles.costLabel}>Total Billing</Text>
+                 </View>
+                 <Text style={styles.costValue}>LKR {record.totalCost.toLocaleString()}</Text>
+              </View>
+            )}
+
+            {record.partsReplaced && record.partsReplaced.length > 0 && (
+              <View style={styles.infoRowContainer}>
+                <Text style={styles.sectionTitleSmall}>Parts Replaced</Text>
+                <View style={styles.partsGrid}>
+                  {record.partsReplaced.map((part, index) => (
+                    <View key={index} style={styles.partItem}>
+                      <View style={styles.bullet} />
+                      <Text style={styles.partText}>{part}</Text>
+                    </View>
+                  ))}
                 </View>
-              ))}
-            </View>
-          </View>
-        )}
+              </View>
+            )}
 
-        {record.documents && record.documents.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Attachments</Text>
-            <View style={styles.attachmentRow}>
-               <FileText size={24} color={theme.colors.muted} />
-               <Text style={styles.attachmentText}>{record.documents.length} document(s) attached</Text>
-            </View>
-          </View>
+            {record.documents && record.documents.length > 0 && (
+              <TouchableOpacity style={styles.docBtn} activeOpacity={0.7}>
+                <FileText size={20} color={theme.colors.brand} />
+                <Text style={styles.docBtnText}>View {record.documents.length} Attachments</Text>
+              </TouchableOpacity>
+            )}
+            
+          </ScrollView>
         )}
       </View>
     </ScreenWrapper>
@@ -81,34 +131,77 @@ export function RecordDetailScreen() {
 }
 
 const styles = StyleSheet.create((theme) => ({
-  container: { padding: theme.spacing.md },
-  header: { marginBottom: theme.spacing.xl },
-  title: { fontSize: theme.fonts.sizes.xxl, fontWeight: '800', color: theme.colors.text },
-  date: { fontSize: theme.fonts.sizes.sm, color: theme.colors.muted, marginTop: 4 },
-  card: { 
-    backgroundColor: theme.colors.surface, 
-    borderRadius: theme.radii.lg, 
-    padding: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    gap: 20
+  topSection: { 
+    paddingHorizontal: theme.spacing.screenPadding, 
+    paddingTop: 16, 
+    paddingBottom: theme.spacing.headerBottom, 
+    position: 'relative', 
+    overflow: 'hidden' 
   },
-  item: { flexDirection: 'row', gap: 16, alignItems: 'center' },
-  label: { fontSize: theme.fonts.sizes.xs, color: theme.colors.muted, textTransform: 'uppercase', fontWeight: '700' },
-  value: { fontSize: theme.fonts.sizes.md, color: theme.colors.text, fontWeight: '600', marginTop: 2 },
-  section: { marginTop: theme.spacing.xl },
-  sectionTitle: { fontSize: theme.fonts.sizes.lg, fontWeight: '800', color: theme.colors.text, marginBottom: theme.spacing.md },
-  list: { gap: 8 },
-  listItem: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 20, zIndex: 10, marginTop: 12 },
+  backBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
+  headerSub: { 
+    fontSize: theme.fonts.sizes.caption, 
+    color: 'rgba(255,255,255,0.7)', 
+    fontWeight: '700', 
+    textTransform: 'uppercase', 
+    letterSpacing: 1 
+  },
+  headerTitle: { 
+    fontSize: theme.fonts.sizes.pageTitle, 
+    color: '#FFFFFF', 
+    fontWeight: '900', 
+    letterSpacing: -0.5, 
+    marginTop: 4 
+  },
+
+  decCircle1: { position: 'absolute', width: 130, height: 130, borderRadius: 65, backgroundColor: 'rgba(245,110,15,0.13)', top: -25, right: -25 },
+  decCircle2: { position: 'absolute', width: 70, height: 70, borderRadius: 35, backgroundColor: 'rgba(245,110,15,0.08)', bottom: 10, right: 90 },
+
+  mainCard: { 
+    backgroundColor: '#FFFFFF', 
+    borderTopLeftRadius: 32, 
+    borderTopRightRadius: 32, 
+    marginTop: theme.spacing.cardOverlap, 
+    flex: 1, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: -4 }, 
+    shadowOpacity: 0.1, 
+    shadowRadius: 20, 
+    elevation: 16 
+  },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  scroll: { 
+    paddingHorizontal: theme.spacing.screenPadding, 
+    paddingTop: 32, 
+    paddingBottom: 130 
+  },
+
+  infoCard: { backgroundColor: '#F9FAFB', borderRadius: 24, padding: 20, marginBottom: 32, borderWidth: 1.5, borderColor: '#F3F4F6' },
+  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  iconBox: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  infoContent: { flex: 1 },
+  label: { fontSize: 10, fontWeight: '900', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 1 },
+  value: { fontSize: 15, fontWeight: '800', color: '#1A1A2E', marginTop: 4 },
+  divider: { height: 1.5, backgroundColor: '#F3F4F6', marginVertical: 16 },
+
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: '900', color: '#1A1A2E', letterSpacing: -0.5 },
+  descriptionBox: { backgroundColor: '#FAFAFA', borderRadius: 16, padding: 20, marginBottom: 28, borderWidth: 1.5, borderColor: '#F3F4F6', borderStyle: 'dashed' },
+  descriptionText: { fontSize: 15, color: '#4B5563', lineHeight: 24, fontWeight: '600' },
+
+  costHighlight: { backgroundColor: '#ECFDF5', borderRadius: 20, padding: 20, marginBottom: 32, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  costHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  costLabel: { fontSize: 12, fontWeight: '900', color: '#059669', textTransform: 'uppercase' },
+  costValue: { fontSize: 20, fontWeight: '900', color: '#059669' },
+
+  infoRowContainer: { marginTop: 32 },
+  sectionTitleSmall: { fontSize: 13, fontWeight: '900', color: '#1A1A2E', textTransform: 'uppercase', marginBottom: 16, letterSpacing: 0.5, marginLeft: 4 },
+  partsGrid: { gap: 12, marginLeft: 4 },
+  partItem: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   bullet: { width: 6, height: 6, borderRadius: 3, backgroundColor: theme.colors.brand },
-  listItemText: { fontSize: theme.fonts.sizes.md, color: theme.colors.text },
-  attachmentRow: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 12, 
-    backgroundColor: theme.colors.background, 
-    padding: theme.spacing.md, 
-    borderRadius: theme.radii.md 
-  },
-  attachmentText: { fontSize: theme.fonts.sizes.sm, color: theme.colors.muted, fontWeight: '500' },
+  partText: { fontSize: 14, color: '#4B5563', fontWeight: '700' },
+
+  docBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 16, borderRadius: 16, backgroundColor: theme.colors.brandSoft, marginTop: 32, borderWidth: 1.5, borderColor: 'rgba(245, 110, 15, 0.1)' },
+  docBtnText: { fontSize: 14, fontWeight: '800', color: theme.colors.brand },
 }));

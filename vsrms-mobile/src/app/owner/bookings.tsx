@@ -1,240 +1,211 @@
 import React, { useState } from 'react';
-import {
-  View, Text, TouchableOpacity, ActivityIndicator, Alert,
-} from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, StatusBar } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { StyleSheet, useUnistyles } from 'react-native-unistyles';
+import { StyleSheet } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
-import { ErrorScreen } from '@/components/feedback/ErrorScreen';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { useAuth } from '@/hooks';
 import { useWorkshopAppointments } from '@/features/appointments/queries/queries';
 import { useUpdateAppointmentStatus } from '@/features/appointments/queries/mutations';
-import { Appointment, AppointmentStatus } from '@/features/appointments/types/appointments.types';
+import { Appointment } from '@/features/appointments/types/appointments.types';
+import { ErrorScreen } from '@/components/feedback/ErrorScreen';
+import { EmptyState } from '@/components/ui/EmptyState';
 
-const TABS = [
-  { label: 'Pending',    status: 'pending'   as AppointmentStatus },
-  { label: 'Confirmed',  status: 'confirmed' as AppointmentStatus },
-  { label: 'In Progress',status: 'in_progress' as AppointmentStatus },
-];
-
-const STATUS_NEXT: Record<AppointmentStatus, { label: string; next: AppointmentStatus } | null> = {
-  pending:     { label: 'Accept',   next: 'confirmed'   },
-  confirmed:   { label: 'Start Job', next: 'in_progress' },
-  in_progress: { label: 'Complete', next: 'completed'   },
-  completed:   null,
-  cancelled:   null,
-};
-
-function getVehicleLabel(a: Appointment): string {
-  if (typeof a.vehicleId === 'object') {
-    return `${a.vehicleId.make} ${a.vehicleId.model} · ${a.vehicleId.registrationNo}`;
-  }
-  return a.vehicleId;
-}
-
-function getCustomerLabel(a: Appointment): string {
-  if (typeof a.userId === 'object') {
-    return a.userId.fullName ?? a.userId.email;
-  }
-  return 'Unknown';
-}
-
-function getCustomerInitial(a: Appointment): string {
-  return getCustomerLabel(a)[0]?.toUpperCase() ?? '?';
-}
-
-function BookingCard({
-  item, onAdvance, onCancel,
-}: {
-  item: Appointment;
-  onAdvance: (id: string, next: AppointmentStatus) => void;
-  onCancel:  (id: string) => void;
+function BookingCard({ 
+  appt, 
+  onStatusChange 
+}: { 
+  appt: Appointment; 
+  onStatusChange: (id: string, s: string) => void 
 }) {
-  const { theme } = useUnistyles();
-  const id   = item._id ?? item.id ?? '';
-  const next = STATUS_NEXT[item.status];
-  const date = new Date(item.scheduledDate).toLocaleDateString(undefined, {
-    weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
-  });
+  const customerName = typeof appt.userId === 'object' ? appt.userId.fullName : 'Customer';
+  const vehicleName = typeof appt.vehicleId === 'object' ? `${appt.vehicleId.make} ${appt.vehicleId.model}` : 'Vehicle';
 
   return (
     <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <View style={styles.customerRow}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{getCustomerInitial(item)}</Text>
+      <View style={styles.cardMain}>
+        <View style={styles.cardHeader}>
+          <View style={styles.infoCol}>
+            <Text style={styles.custName}>{customerName}</Text>
+            <Text style={styles.vehName}>{vehicleName}</Text>
           </View>
-          <View style={styles.customerInfo}>
-            <Text style={styles.customerName}>{getCustomerLabel(item)}</Text>
-            <Text style={styles.vehicleText} numberOfLines={1}>{getVehicleLabel(item)}</Text>
+          <View style={[styles.statusBadge, appt.status === 'confirmed' ? styles.statusConfirmed : styles.statusPending]}>
+            <Text style={[styles.statusTabText, appt.status === 'confirmed' ? { color: '#059669' } : { color: '#D97706' }]}>
+              {appt.status.toUpperCase()}
+            </Text>
           </View>
         </View>
-      </View>
 
-      <View style={styles.metaRow}>
-        <Ionicons name="construct-outline" size={14} color={theme.colors.muted} />
-        <Text style={styles.metaText}>{item.serviceType}</Text>
-      </View>
-      <View style={styles.metaRow}>
-        <Ionicons name="calendar-outline" size={14} color={theme.colors.brand} />
-        <Text style={[styles.metaText, { color: theme.colors.brand }]}>{date}</Text>
-      </View>
-      {item.notes ? (
         <View style={styles.metaRow}>
-          <Ionicons name="document-text-outline" size={14} color={theme.colors.muted} />
-          <Text style={styles.metaText} numberOfLines={2}>{item.notes}</Text>
+          <View style={styles.metaItem}>
+            <Ionicons name="calendar-outline" size={14} color="#6B7280" />
+            <Text style={styles.metaText}>{new Date(appt.scheduledDate).toLocaleDateString()}</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <Ionicons name="build-outline" size={14} color="#6B7280" />
+            <Text style={styles.metaText}>{appt.serviceType}</Text>
+          </View>
         </View>
-      ) : null}
-
-      <View style={styles.footerRow}>
-        <TouchableOpacity style={styles.cancelBtn} onPress={() => onCancel(id)}>
-          <Text style={styles.cancelText}>Cancel</Text>
-        </TouchableOpacity>
-        {next && (
-          <TouchableOpacity
-            style={styles.advanceBtn}
-            onPress={() => onAdvance(id, next.next)}
-          >
-            <Text style={styles.advanceText}>{next.label}</Text>
-          </TouchableOpacity>
-        )}
       </View>
+
+      {appt.status === 'pending' && (
+        <View style={styles.actionRow}>
+          <TouchableOpacity 
+            style={styles.declineBtn} 
+            onPress={() => onStatusChange(appt._id!, 'cancelled')}
+          >
+            <Text style={styles.declineText}>Decline</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.approveBtn} 
+            onPress={() => onStatusChange(appt._id!, 'confirmed')}
+          >
+            <Text style={styles.approveText}>Approve</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
 
-export default function BookingManagementScreen() {
-  const { theme } = useUnistyles();
-  const router = useRouter();
+export default function BookingsScreen() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState(0);
+  const [status, setStatus] = useState<'pending' | 'confirmed' | 'completed' | 'cancelled'>('pending');
+  
+  const { data, isLoading, isError, refetch } = useWorkshopAppointments(user?.workshopId, status);
+  const { mutate: updateStatus } = useUpdateAppointmentStatus();
 
-  const workshopId = user?.workshopId;
-  const status = TABS[activeTab].status;
-
-  const { data, isLoading, isError, refetch } = useWorkshopAppointments(workshopId, status);
-  const { mutate: updateStatus, isPending } = useUpdateAppointmentStatus();
-
-  const handleAdvance = (id: string, next: AppointmentStatus) => {
-    Alert.alert('Confirm', `Move appointment to "${next.replace('_', ' ')}"?`, [
-      { text: 'No', style: 'cancel' },
-      { text: 'Yes', onPress: () => updateStatus({ id, status: next }) },
-    ]);
+  const handleStatusUpdate = (id: string, s: string) => {
+    updateStatus({ id, status: s });
   };
-
-  const handleCancel = (id: string) => {
-    Alert.alert('Cancel Appointment', 'This will cancel the appointment. Continue?', [
-      { text: 'No', style: 'cancel' },
-      { text: 'Cancel Booking', style: 'destructive', onPress: () => updateStatus({ id, status: 'cancelled' }) },
-    ]);
-  };
-
-  if (isError) return <ErrorScreen onRetry={refetch} />;
 
   return (
-    <ScreenWrapper bg={theme.colors.surface}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} hitSlop={8}>
-          <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Booking Management</Text>
-        {isPending
-          ? <ActivityIndicator color={theme.colors.brand} />
-          : <View style={{ width: 28 }} />
-        }
+    <ScreenWrapper bg="#1A1A2E">
+      <StatusBar barStyle="light-content" backgroundColor="#1A1A2E" />
+
+      {/* ── DARK TOP SECTION ── */}
+      <View style={styles.topSection}>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.headerSub}>Management</Text>
+            <Text style={styles.headerTitle}>Bookings</Text>
+          </View>
+        </View>
+
+        {/* Status Tabs */}
+        <View style={styles.tabContainer}>
+          {(['pending', 'confirmed', 'completed'] as const).map((s) => (
+            <TouchableOpacity 
+              key={s} 
+              onPress={() => setStatus(s)}
+              style={[styles.tab, status === s && styles.activeTab]}
+            >
+              <Text style={[styles.tabText, status === s && styles.activeTabText]}>
+                {s.charAt(0).toUpperCase() + s.slice(1)}
+              </Text>
+              {status === s && <View style={styles.activeLine} />}
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.decCircle1} />
+        <View style={styles.decCircle2} />
       </View>
 
-      {/* Tabs */}
-      <View style={styles.tabs}>
-        {TABS.map((t, i) => (
-          <TouchableOpacity
-            key={t.status}
-            style={[styles.tab, activeTab === i && styles.tabActive]}
-            onPress={() => setActiveTab(i)}
-          >
-            <Text style={[styles.tabText, activeTab === i && styles.tabTextActive]}>{t.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {isLoading
-        ? <ActivityIndicator style={{ marginTop: 40 }} size="large" color={theme.colors.brand} />
-        : (
-          <FlashList<Appointment>
-            data={data ?? []}
-            keyExtractor={a => a._id ?? a.id ?? ''}
-            renderItem={({ item }) => (
-              <BookingCard item={item} onAdvance={handleAdvance} onCancel={handleCancel} />
-            )}
-            estimatedItemSize={200}
-            onRefresh={refetch}
-            refreshing={isLoading}
-            contentContainerStyle={styles.list}
-            ListEmptyComponent={<EmptyState message={`No ${TABS[activeTab].label.toLowerCase()} bookings.`} />}
+      {/* ── WHITE CARD SECTION ── */}
+      <View style={[styles.mainCard, { overflow: 'hidden' }]}>
+        {isLoading && !data ? (
+          <View style={styles.centered}><ActivityIndicator size="large" color="#F56E0F" /></View>
+        ) : isError ? (
+          <ErrorScreen onRetry={refetch} variant="inline" />
+        ) : (
+          <FlashList
+             data={(data || []) as Appointment[]}
+             renderItem={({ item }) => <BookingCard appt={item as Appointment} onStatusChange={handleStatusUpdate} />}
+             estimatedItemSize={140}
+             onRefresh={refetch}
+             refreshing={isLoading}
+             keyExtractor={(a: Appointment) => a._id || a.id || Math.random().toString()}
+             contentContainerStyle={styles.list}
+             ListEmptyComponent={<EmptyState message={`No ${status} bookings found.`} />}
           />
-        )
-      }
+        )}
+      </View>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create((theme) => ({
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.md,
-    backgroundColor: theme.colors.surface, borderBottomWidth: 1, borderBottomColor: theme.colors.border,
+  topSection: { 
+    paddingHorizontal: theme.spacing.screenPadding, 
+    paddingTop: 16, 
+    paddingBottom: theme.spacing.headerBottom, 
+    position: 'relative', 
+    overflow: 'hidden' 
   },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: theme.colors.text },
-  backBtn: {
-    width: 36, height: 36, borderRadius: 10,
-    alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background,
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10, marginBottom: 20 },
+  headerSub: { 
+    fontSize: theme.fonts.sizes.caption, 
+    color: 'rgba(255,255,255,0.7)', 
+    fontWeight: '700', 
+    textTransform: 'uppercase', 
+    letterSpacing: 1 
+  },
+  headerTitle: { 
+    fontSize: theme.fonts.sizes.pageTitle, 
+    color: '#FFFFFF', 
+    fontWeight: '900', 
+    letterSpacing: -0.5, 
+    marginTop: 4 
   },
 
-  tabs: {
-    flexDirection: 'row', backgroundColor: theme.colors.background,
-    marginHorizontal: theme.spacing.md, marginVertical: 12,
-    borderRadius: 10, padding: 3,
-  },
-  tab: { flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: 'center' },
-  tabActive: { backgroundColor: theme.colors.surface, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
-  tabText: { fontSize: 12, fontWeight: '700', color: theme.colors.muted },
-  tabTextActive: { color: theme.colors.text },
+  tabContainer: { flexDirection: 'row', gap: 20, zIndex: 10 },
+  tab: { paddingVertical: 8, position: 'relative' },
+  tabText: { fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: '700' },
+  activeTabText: { color: '#FFFFFF' },
+  activeLine: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, backgroundColor: '#F56E0F', borderRadius: 2 },
+  activeTab: {},
 
-  list: { paddingHorizontal: theme.spacing.md, paddingBottom: 100 },
+  decCircle1: { position: 'absolute', width: 130, height: 130, borderRadius: 65, backgroundColor: 'rgba(245,110,15,0.13)', top: -25, right: -25 },
+  decCircle2: { position: 'absolute', width: 70, height: 70, borderRadius: 35, backgroundColor: 'rgba(245,110,15,0.08)', bottom: 10, right: 90 },
 
-  card: {
-    backgroundColor: theme.colors.surface, borderRadius: theme.radii.lg,
-    padding: theme.spacing.md, marginBottom: theme.spacing.sm,
-    borderWidth: 1, borderColor: theme.colors.border,
+  mainCard: { 
+    backgroundColor: '#FFFFFF', 
+    borderTopLeftRadius: 32, 
+    borderTopRightRadius: 32, 
+    marginTop: theme.spacing.cardOverlap, 
+    flex: 1, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: -4 }, 
+    shadowOpacity: 0.1, 
+    shadowRadius: 20, 
+    elevation: 16 
   },
-  cardHeader: { marginBottom: 12 },
-  customerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  avatar: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: theme.colors.brandSoft, alignItems: 'center', justifyContent: 'center',
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  list: { 
+    paddingHorizontal: theme.spacing.screenPadding, 
+    paddingTop: 24, 
+    paddingBottom: 130 
   },
-  avatarText: { fontSize: 16, fontWeight: '800', color: theme.colors.brand },
-  customerInfo: { flex: 1 },
-  customerName: { fontSize: 15, fontWeight: '800', color: theme.colors.text },
-  vehicleText: { fontSize: 12, color: theme.colors.muted, fontWeight: '600', marginTop: 1 },
 
-  metaRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 6 },
-  metaText: { flex: 1, fontSize: 13, color: theme.colors.muted, fontWeight: '500' },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 24, marginBottom: 16, borderWidth: 1.5, borderColor: '#F3F4F6', overflow: 'hidden' },
+  cardMain: { padding: 18 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+  infoCol: { flex: 1 },
+  custName: { fontSize: 16, fontWeight: '900', color: '#1A1A2E' },
+  vehName: { fontSize: 13, color: '#6B7280', fontWeight: '600', marginTop: 2 },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  statusConfirmed: { backgroundColor: '#ECFDF5' },
+  statusPending: { backgroundColor: '#FFFBEB' },
+  statusTabText: { fontSize: 9, fontWeight: '800' },
 
-  footerRow: { flexDirection: 'row', gap: 10, marginTop: 14 },
-  cancelBtn: {
-    flex: 1, height: 42, borderRadius: 10,
-    borderWidth: 1, borderColor: theme.colors.border,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  cancelText: { fontSize: 13, fontWeight: '700', color: theme.colors.text },
-  advanceBtn: {
-    flex: 2, height: 42, borderRadius: 10,
-    backgroundColor: theme.colors.brand, alignItems: 'center', justifyContent: 'center',
-  },
-  advanceText: { fontSize: 13, fontWeight: '800', color: '#fff' },
+  metaRow: { flexDirection: 'row', gap: 16 },
+  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  metaText: { fontSize: 12, fontWeight: '700', color: '#6B7280' },
+
+  actionRow: { flexDirection: 'row', borderTopWidth: 1.5, borderTopColor: '#F3F4F6' },
+  declineBtn: { flex: 1, paddingVertical: 14, alignItems: 'center', justifyContent: 'center', borderRightWidth: 1.5, borderRightColor: '#F3F4F6' },
+  approveBtn: { flex: 1, paddingVertical: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F56E0F' },
+  declineText: { fontSize: 14, fontWeight: '800', color: '#EF4444' },
+  approveText: { fontSize: 14, fontWeight: '800', color: '#FFFFFF' },
 }));

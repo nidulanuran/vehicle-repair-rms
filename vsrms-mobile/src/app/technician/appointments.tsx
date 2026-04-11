@@ -1,215 +1,182 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, StatusBar } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, useUnistyles } from 'react-native-unistyles';
+import { StyleSheet } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
-import { ErrorScreen } from '@/components/feedback/ErrorScreen';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { useAuth } from '@/hooks';
 import { useWorkshopAppointments } from '@/features/appointments/queries/queries';
 import { useUpdateAppointmentStatus } from '@/features/appointments/queries/mutations';
-import { Appointment, AppointmentStatus } from '@/features/appointments/types/appointments.types';
+import { Appointment } from '@/features/appointments/types/appointments.types';
+import { ErrorScreen } from '@/components/feedback/ErrorScreen';
+import { EmptyState } from '@/components/ui/EmptyState';
 
-const TABS: { label: string; status: AppointmentStatus }[] = [
-  { label: 'Pending',   status: 'pending'   },
-  { label: 'Confirmed', status: 'confirmed' },
-];
-
-function getVehicleLabel(a: Appointment): string {
-  if (typeof a.vehicleId === 'object') {
-    return `${a.vehicleId.make} ${a.vehicleId.model} · ${a.vehicleId.registrationNo}`;
-  }
-  return a.vehicleId;
-}
-
-function getCustomerLabel(a: Appointment): string {
-  if (typeof a.userId === 'object') return a.userId.fullName ?? a.userId.email;
-  return 'Customer';
-}
-
-function AppointmentCard({
-  item, onAccept, onStart,
-}: {
-  item: Appointment;
-  onAccept: (id: string) => void;
-  onStart:  (id: string) => void;
+function ApptCard({ 
+  appt, 
+  onAccept 
+}: { 
+  appt: Appointment; 
+  onAccept: (id: string) => void 
 }) {
-  const { theme } = useUnistyles();
-  const id = item._id ?? item.id ?? '';
-  const date = new Date(item.scheduledDate).toLocaleDateString(undefined, {
-    weekday: 'short', day: 'numeric', month: 'short',
-  });
+  const customerName = typeof appt.userId === 'object' ? appt.userId.fullName : 'Customer';
+  const vehicleName = typeof appt.vehicleId === 'object' ? `${appt.vehicleId.make} ${appt.vehicleId.model}` : 'Vehicle';
 
   return (
     <View style={styles.card}>
-      <View style={styles.cardTop}>
-        <View style={styles.timeChip}>
-          <Ionicons name="calendar-outline" size={12} color={theme.colors.brand} />
-          <Text style={styles.timeText}>{date}</Text>
+      <View style={styles.cardBody}>
+        <View style={styles.statusRow}>
+           <View style={[styles.pill, { backgroundColor: appt.status === 'confirmed' ? '#ECFDF5' : '#FFFBEB' }]}>
+              <Text style={[styles.pillText, { color: appt.status === 'confirmed' ? '#059669' : '#D97706' }]}>
+                {appt.status.toUpperCase()}
+              </Text>
+           </View>
+           <Text style={styles.dateText}>{new Date(appt.scheduledDate).toLocaleDateString()}</Text>
         </View>
-        <View style={[
-          styles.badge,
-          item.status === 'pending' ? styles.badgePending : styles.badgeConfirmed,
-        ]}>
-          <Text style={[
-            styles.badgeText,
-            item.status === 'pending' ? styles.textPending : styles.textConfirmed,
-          ]}>{item.status}</Text>
-        </View>
+        
+        <Text style={styles.serviceTitle}>{appt.serviceType}</Text>
+        <Text style={styles.ownerText}>{customerName} • {vehicleName}</Text>
       </View>
 
-      <Text style={styles.vehicleName}>{getVehicleLabel(item)}</Text>
-      <Text style={styles.serviceName}>{item.serviceType}</Text>
-
-      <View style={styles.divider} />
-
-      <View style={styles.footer}>
-        <View style={styles.ownerRow}>
-          <View style={styles.avatarMini}>
-            <Text style={styles.avatarMiniText}>{getCustomerLabel(item)[0]?.toUpperCase() ?? '?'}</Text>
-          </View>
-          <Text style={styles.ownerName}>{getCustomerLabel(item)}</Text>
-        </View>
-
-        {item.status === 'pending' && (
-          <TouchableOpacity style={styles.actionBtn} onPress={() => onAccept(id)}>
-            <Text style={styles.actionBtnText}>Accept</Text>
-          </TouchableOpacity>
-        )}
-        {item.status === 'confirmed' && (
-          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#059669' }]} onPress={() => onStart(id)}>
-            <Text style={styles.actionBtnText}>Start Job</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+      {appt.status === 'pending' && (
+        <TouchableOpacity style={styles.acceptBtn} onPress={() => onAccept(appt._id!)}>
+           <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />
+           <Text style={styles.acceptText}>Accept Job</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
 
-export default function StaffAppointmentsScreen() {
-  const { theme } = useUnistyles();
+export default function TechnicianAppointmentsScreen() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState(0);
+  const [status, setStatus] = useState<'pending' | 'confirmed' | 'completed'>('pending');
+  
+  const { data, isLoading, isError, refetch } = useWorkshopAppointments(user?.workshopId, status);
+  const { mutate: updateStatus } = useUpdateAppointmentStatus();
 
-  const workshopId = user?.workshopId;
-  const status = TABS[activeTab].status;
-
-  const { data, isLoading, isError, refetch } = useWorkshopAppointments(workshopId, status);
-  const { mutate: updateStatus, isPending } = useUpdateAppointmentStatus();
-
-  const handleAccept = (id: string) =>
-    Alert.alert('Accept Appointment', 'Confirm this booking?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Accept', onPress: () => updateStatus({ id, status: 'confirmed' }) },
-    ]);
-
-  const handleStart = (id: string) =>
-    Alert.alert('Start Job', 'Mark this appointment as in progress?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Start', onPress: () => updateStatus({ id, status: 'in_progress' }) },
-    ]);
-
-  if (isError) return <ErrorScreen onRetry={refetch} />;
+  const handleAccept = (id: string) => {
+    updateStatus({ id, status: 'confirmed' });
+  };
 
   return (
-    <ScreenWrapper bg={theme.colors.surface}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Appointments</Text>
-        {isPending
-          ? <ActivityIndicator color={theme.colors.brand} />
-          : <Text style={styles.headerCount}>{data?.length ?? 0} {TABS[activeTab].label}</Text>
-        }
+    <ScreenWrapper bg="#1A1A2E">
+      <StatusBar barStyle="light-content" backgroundColor="#1A1A2E" />
+
+      {/* ── DARK TOP SECTION ── */}
+      <View style={styles.topSection}>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.headerSub}>Shift Schedule</Text>
+            <Text style={styles.headerTitle}>Appointments</Text>
+          </View>
+        </View>
+
+        {/* Custom Tabs */}
+        <View style={styles.tabContainer}>
+          {(['pending', 'confirmed', 'completed'] as const).map((s) => (
+            <TouchableOpacity 
+              key={s} 
+              onPress={() => setStatus(s)}
+              style={[styles.tab, status === s && styles.activeTab]}
+            >
+              <Text style={[styles.tabText, status === s && styles.activeTabText]}>
+                {s.charAt(0).toUpperCase() + s.slice(1)}
+              </Text>
+              {status === s && <View style={styles.activeLine} />}
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.decCircle1} />
+        <View style={styles.decCircle2} />
       </View>
 
-      {/* Tabs */}
-      <View style={styles.tabs}>
-        {TABS.map((t, i) => (
-          <TouchableOpacity
-            key={t.status}
-            style={[styles.tab, activeTab === i && styles.tabActive]}
-            onPress={() => setActiveTab(i)}
-          >
-            <Text style={[styles.tabText, activeTab === i && styles.tabTextActive]}>{t.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {isLoading
-        ? <ActivityIndicator style={{ marginTop: 40 }} size="large" color={theme.colors.brand} />
-        : (
+      {/* ── WHITE CARD SECTION ── */}
+      <View style={[styles.mainCard, { overflow: 'hidden' }]}>
+        {isLoading && !data ? (
+          <View style={styles.centered}><ActivityIndicator size="large" color="#F56E0F" /></View>
+        ) : isError ? (
+          <ErrorScreen onRetry={refetch} variant="inline" />
+        ) : (
+          // @ts-expect-error - FlashList requires estimatedItemSize dynamically
           <FlashList<Appointment>
-            data={data ?? []}
-            keyExtractor={a => a._id ?? a.id ?? ''}
-            renderItem={({ item }) => (
-              <AppointmentCard item={item} onAccept={handleAccept} onStart={handleStart} />
-            )}
-            estimatedItemSize={180}
-            onRefresh={refetch}
-            refreshing={isLoading}
-            contentContainerStyle={styles.list}
-            ListEmptyComponent={<EmptyState message={`No ${TABS[activeTab].label.toLowerCase()} appointments.`} />}
+             data={data || []}
+             renderItem={({ item }) => <ApptCard appt={item} onAccept={handleAccept} />}
+             estimatedItemSize={140}
+             onRefresh={refetch}
+             refreshing={isLoading}
+             keyExtractor={(a) => a._id || a.id || Math.random().toString()}
+             contentContainerStyle={styles.list}
+             ListEmptyComponent={<EmptyState message={`No ${status} tasks assigned yet.`} />}
           />
-        )
-      }
+        )}
+      </View>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create((theme) => ({
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.md, paddingBottom: theme.spacing.lg,
-    backgroundColor: theme.colors.surface, borderBottomWidth: 1, borderBottomColor: theme.colors.border,
+  topSection: { 
+    paddingHorizontal: theme.spacing.screenPadding, 
+    paddingTop: 16, 
+    paddingBottom: theme.spacing.headerBottom, 
+    position: 'relative', 
+    overflow: 'hidden' 
   },
-  headerTitle: { fontSize: 24, fontWeight: '900', color: theme.colors.text, letterSpacing: -0.5 },
-  headerCount: { fontSize: 13, color: theme.colors.muted, fontWeight: '700' },
-
-  tabs: {
-    flexDirection: 'row', backgroundColor: theme.colors.background,
-    marginHorizontal: theme.spacing.md, marginVertical: 12,
-    borderRadius: 10, padding: 3,
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10, marginBottom: 20 },
+  headerSub: { 
+    fontSize: theme.fonts.sizes.caption, 
+    color: 'rgba(255,255,255,0.7)', 
+    fontWeight: '700', 
+    textTransform: 'uppercase', 
+    letterSpacing: 1 
   },
-  tab: { flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: 'center' },
-  tabActive: { backgroundColor: theme.colors.surface, elevation: 2 },
-  tabText: { fontSize: 13, fontWeight: '700', color: theme.colors.muted },
-  tabTextActive: { color: theme.colors.text },
-
-  list: { paddingHorizontal: theme.spacing.md, paddingBottom: 120 },
-
-  card: {
-    backgroundColor: theme.colors.surface, borderRadius: theme.radii.lg,
-    padding: theme.spacing.md, marginBottom: theme.spacing.md,
-    borderWidth: 1, borderColor: theme.colors.border, elevation: 1,
+  headerTitle: { 
+    fontSize: theme.fonts.sizes.pageTitle, 
+    color: '#FFFFFF', 
+    fontWeight: '900', 
+    letterSpacing: -0.5, 
+    marginTop: 4 
   },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  timeChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: theme.colors.brandSoft, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6,
-  },
-  timeText: { fontSize: 11, fontWeight: '700', color: theme.colors.brand },
-  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  badgePending: { backgroundColor: '#FFFBEB' },
-  badgeConfirmed: { backgroundColor: '#ECFDF5' },
-  badgeText: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
-  textPending: { color: '#D97706' },
-  textConfirmed: { color: '#059669' },
 
-  vehicleName: { fontSize: 17, fontWeight: '900', color: theme.colors.text, marginBottom: 3 },
-  serviceName: { fontSize: 13, color: theme.colors.muted, fontWeight: '600', marginBottom: 14 },
+  tabContainer: { flexDirection: 'row', gap: 20, zIndex: 10 },
+  tab: { paddingVertical: 8, position: 'relative' },
+  activeTab: {},
+  tabText: { fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: '700' },
+  activeTabText: { color: '#FFFFFF' },
+  activeLine: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, backgroundColor: '#F56E0F', borderRadius: 2 },
 
-  divider: { height: 1, backgroundColor: theme.colors.border, marginBottom: 14 },
+  decCircle1: { position: 'absolute', width: 130, height: 130, borderRadius: 65, backgroundColor: 'rgba(245,110,15,0.13)', top: -25, right: -25 },
+  decCircle2: { position: 'absolute', width: 70, height: 70, borderRadius: 35, backgroundColor: 'rgba(245,110,15,0.08)', bottom: 10, right: 90 },
 
-  footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  ownerRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  avatarMini: {
-    width: 28, height: 28, borderRadius: 14,
-    backgroundColor: theme.colors.border, alignItems: 'center', justifyContent: 'center',
+  mainCard: { 
+    backgroundColor: '#FFFFFF', 
+    borderTopLeftRadius: 32, 
+    borderTopRightRadius: 32, 
+    marginTop: theme.spacing.cardOverlap, 
+    flex: 1, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: -4 }, 
+    shadowOpacity: 0.1, 
+    shadowRadius: 20, 
+    elevation: 16 
   },
-  avatarMiniText: { fontSize: 12, fontWeight: '800', color: theme.colors.text },
-  ownerName: { fontSize: 13, fontWeight: '700', color: theme.colors.text },
-  actionBtn: {
-    backgroundColor: theme.colors.brand, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8,
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  list: { 
+    paddingHorizontal: theme.spacing.screenPadding, 
+    paddingTop: 24, 
+    paddingBottom: 130 
   },
-  actionBtnText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+
+  card: { backgroundColor: '#FFFFFF', borderRadius: 22, marginBottom: 16, borderWidth: 1.5, borderColor: '#F3F4F6', overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 10, elevation: 2 },
+  cardBody: { padding: 18 },
+  statusRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  pill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  pillText: { fontSize: 9, fontWeight: '800' },
+  dateText: { fontSize: 12, fontWeight: '700', color: '#9CA3AF' },
+  serviceTitle: { fontSize: 17, fontWeight: '900', color: '#1A1A2E', letterSpacing: -0.3 },
+  ownerText: { fontSize: 13, color: '#6B7280', fontWeight: '600', marginTop: 4 },
+
+  acceptBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#F56E0F', paddingVertical: 14 },
+  acceptText: { color: '#FFFFFF', fontWeight: '800', fontSize: 14, textTransform: 'uppercase' },
 }));

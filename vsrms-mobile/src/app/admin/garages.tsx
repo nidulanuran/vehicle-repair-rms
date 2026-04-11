@@ -1,337 +1,218 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, Alert, TextInput,
-  ActivityIndicator, Modal, ScrollView, KeyboardAvoidingView, Platform,
+  View, Text, TouchableOpacity, Modal, TextInput, ScrollView, ActivityIndicator, StatusBar,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, useUnistyles } from 'react-native-unistyles';
+import { StyleSheet } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
+import { useWorkshops } from '@/features/workshops/queries/queries';
+import { useCreateWorkshop } from '@/features/workshops/queries/mutations';
 import { ErrorScreen } from '@/components/feedback/ErrorScreen';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { useWorkshops } from '@/features/workshops/queries/queries';
-import { useCreateWorkshop, useDeleteWorkshop } from '@/features/workshops/queries/mutations';
-import { Workshop, CreateWorkshopPayload } from '@/features/workshops/types/workshops.types';
+import { Workshop } from '@/features/workshops/types/workshops.types';
 
-// ─── Create Modal ─────────────────────────────────────────────────────────────
-function CreateModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  const { theme } = useUnistyles();
-  const { mutate: create, isPending } = useCreateWorkshop();
-
-  const [name, setName] = useState('');
-  const [address, setAddress] = useState('');
-  const [district, setDistrict] = useState('');
-  const [contact, setContact] = useState('');
-  const [lat, setLat] = useState('');
-  const [lng, setLng] = useState('');
-  const [error, setError] = useState('');
-
-  const reset = () => {
-    setName(''); setAddress(''); setDistrict('');
-    setContact(''); setLat(''); setLng(''); setError('');
-  };
-
-  const handleClose = () => { reset(); onClose(); };
-
-  const handleCreate = () => {
-    if (!name.trim() || !address.trim() || !district.trim() || !contact.trim()) {
-      setError('Name, address, district and contact are required.'); return;
-    }
-    const latNum = parseFloat(lat);
-    const lngNum = parseFloat(lng);
-    if (isNaN(latNum) || isNaN(lngNum)) {
-      setError('Enter valid latitude and longitude.'); return;
-    }
-    setError('');
-
-    const payload: CreateWorkshopPayload = {
-      name: name.trim(),
-      address: address.trim(),
-      district: district.trim(),
-      contactNumber: contact.trim(),
-      location: { type: 'Point', coordinates: [lngNum, latNum] },
-    };
-    create(payload, { onSuccess: handleClose });
-  };
-
-  return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <View style={modal.container}>
-          {/* Header */}
-          <View style={modal.header}>
-            <Text style={modal.title}>New Workshop</Text>
-            <TouchableOpacity onPress={handleClose} hitSlop={8}>
-              <Ionicons name="close" size={24} color={theme.colors.text} />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView contentContainerStyle={modal.body} keyboardShouldPersistTaps="handled">
-            {error ? (
-              <View style={modal.errorBanner}>
-                <Ionicons name="alert-circle-outline" size={16} color="#DC2626" />
-                <Text style={modal.errorText}>{error}</Text>
-              </View>
-            ) : null}
-
-            {[
-              { label: 'Workshop Name *', value: name, set: setName, placeholder: 'e.g. AutoFix Colombo' },
-              { label: 'Address *', value: address, set: setAddress, placeholder: 'e.g. 123 Main St, Colombo 03' },
-              { label: 'District *', value: district, set: setDistrict, placeholder: 'e.g. Colombo' },
-              { label: 'Contact Number *', value: contact, set: setContact, placeholder: '+94 77 123 4567', keyboardType: 'phone-pad' as any },
-              { label: 'Latitude *', value: lat, set: setLat, placeholder: '6.9271', keyboardType: 'numeric' as any },
-              { label: 'Longitude *', value: lng, set: setLng, placeholder: '79.8612', keyboardType: 'numeric' as any },
-            ].map(f => (
-              <View key={f.label} style={modal.field}>
-                <Text style={modal.label}>{f.label}</Text>
-                <TextInput
-                  style={modal.input}
-                  value={f.value}
-                  onChangeText={f.set}
-                  placeholder={f.placeholder}
-                  placeholderTextColor={theme.colors.muted}
-                  keyboardType={f.keyboardType}
-                  autoCapitalize="none"
-                />
-              </View>
-            ))}
-
-            <TouchableOpacity
-              style={[modal.submitBtn, isPending && { opacity: 0.6 }]}
-              onPress={handleCreate}
-              disabled={isPending}
-            >
-              {isPending
-                ? <ActivityIndicator color="#fff" />
-                : <Text style={modal.submitText}>Create Workshop</Text>
-              }
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
-  );
-}
-
-// ─── Workshop Card ─────────────────────────────────────────────────────────────
-function WorkshopCard({ item, onDelete }: { item: Workshop; onDelete: (id: string) => void }) {
-  const { theme } = useUnistyles();
-  const id = item._id ?? item.id ?? '';
-
+function WorkshopCard({ workshop }: { workshop: Workshop }) {
   return (
     <View style={styles.card}>
-      <View style={styles.cardRow}>
-        {/* Icon */}
-        <View style={styles.iconBox}>
-          <Ionicons name="build-outline" size={22} color={theme.colors.brand} />
+      <View style={styles.cardHeader}>
+        <View style={styles.workshopIcon}>
+          <Ionicons name="business" size={24} color="#F56E0F" />
         </View>
-
-        {/* Info */}
-        <View style={styles.cardInfo}>
-          <Text style={styles.cardName} numberOfLines={1}>{item.name}</Text>
-          <View style={styles.metaRow}>
-            <Ionicons name="location-outline" size={12} color={theme.colors.muted} />
-            <Text style={styles.metaText} numberOfLines={1}>{item.address}</Text>
-          </View>
-          <View style={styles.metaRow}>
-            <Ionicons name="business-outline" size={12} color={theme.colors.muted} />
-            <Text style={styles.metaText}>{item.district}</Text>
-          </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.workshopName}>{workshop.name}</Text>
+          <Text style={styles.workshopLocation}>{workshop.address}</Text>
         </View>
-
-        {/* Delete */}
-        <TouchableOpacity
-          style={styles.deleteBtn}
-          onPress={() => onDelete(id)}
-          hitSlop={8}
-        >
-          <Ionicons name="trash-outline" size={18} color="#DC2626" />
+        <TouchableOpacity style={styles.manageBtn}>
+           <Ionicons name="settings-outline" size={18} color="#6B7280" />
         </TouchableOpacity>
       </View>
-
-      {/* Rating + services row */}
-      <View style={styles.footerRow}>
-        <View style={styles.ratingChip}>
-          <Ionicons name="star" size={12} color="#F59E0B" />
-          <Text style={styles.ratingText}>
-            {item.averageRating > 0 ? item.averageRating.toFixed(1) : 'New'} · {item.totalReviews} reviews
-          </Text>
+      <View style={styles.cardFooter}>
+        <View style={styles.stat}>
+           <Ionicons name="star" size={12} color="#F59E0B" />
+           <Text style={styles.statText}>{workshop.averageRating?.toFixed(1) || '0.0'}</Text>
         </View>
-        {item.servicesOffered && item.servicesOffered.length > 0 && (
-          <Text style={styles.services} numberOfLines={1}>
-            {item.servicesOffered.slice(0, 3).join(' · ')}
-          </Text>
-        )}
+        <View style={styles.stat}>
+           <Ionicons name="chatbubble-outline" size={12} color="#6B7280" />
+           <Text style={styles.statText}>{workshop.totalReviews || 0} reviews</Text>
+        </View>
+        <View style={[styles.statusBadge, { backgroundColor: '#ECFDF5' }]}>
+           <View style={[styles.statusDot, { backgroundColor: '#10B981' }]} />
+           <Text style={[styles.statusText, { color: '#059669' }]}>Operational</Text>
+        </View>
       </View>
     </View>
   );
 }
 
-// ─── Screen ───────────────────────────────────────────────────────────────────
-export default function GarageManagementScreen() {
-  const { theme } = useUnistyles();
-  const [search, setSearch] = useState('');
-  const [showCreate, setShowCreate] = useState(false);
+export default function AdminGaragesScreen() {
+  const [modalVisible, setModalVisible] = useState(false);
+  const [formData, setFormData] = useState({ name: '', address: '', contactNumber: '', district: 'Colombo' });
+  const { data: workshops, isLoading, isError, refetch } = useWorkshops();
+  const { mutate: create, isPending } = useCreateWorkshop();
 
-  const { data, isLoading, isError, refetch } = useWorkshops();
-  const { mutate: remove, isPending: deleting } = useDeleteWorkshop();
-
-  const handleDelete = (id: string) => {
-    Alert.alert(
-      'Delete Workshop',
-      'This will permanently remove the workshop and all associated data.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => remove(id) },
-      ],
-    );
+  const handleCreate = () => {
+    if (!formData.name || !formData.address) return;
+    create(formData, { 
+      onSuccess: () => {
+        setModalVisible(false);
+        setFormData({ name: '', address: '', contactNumber: '', district: 'Colombo' });
+      }
+    });
   };
 
-  const workshops = (data ?? []).filter(w => {
-    if (!search.trim()) return true;
-    const q = search.toLowerCase();
-    return w.name.toLowerCase().includes(q) || w.district.toLowerCase().includes(q) || w.address.toLowerCase().includes(q);
-  });
-
-  if (isError) return <ErrorScreen onRetry={refetch} />;
-
   return (
-    <ScreenWrapper bg={theme.colors.surface}>
-      <CreateModal visible={showCreate} onClose={() => setShowCreate(false)} />
+    <ScreenWrapper bg="#1A1A2E">
+      <StatusBar barStyle="light-content" backgroundColor="#1A1A2E" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>Workshops</Text>
-          <Text style={styles.headerSub}>{data?.length ?? 0} registered</Text>
-        </View>
-        <View style={styles.headerRight}>
-          {deleting && <ActivityIndicator color={theme.colors.brand} style={{ marginRight: 8 }} />}
-          <TouchableOpacity style={styles.addBtn} onPress={() => setShowCreate(true)}>
-            <Ionicons name="add" size={22} color="#fff" />
+      {/* ── DARK TOP SECTION ── */}
+      <View style={styles.topSection}>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.headerSub}>Infrastructure</Text>
+            <Text style={styles.headerTitle}>Garages</Text>
+          </View>
+          <TouchableOpacity style={styles.addBtn} onPress={() => setModalVisible(true)} activeOpacity={0.8}>
+            <Ionicons name="add" size={22} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
+
+        <View style={styles.decCircle1} />
+        <View style={styles.decCircle2} />
       </View>
 
-      {/* Search */}
-      <View style={styles.searchBar}>
-        <Ionicons name="search-outline" size={18} color={theme.colors.muted} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search by name, district, address..."
-          placeholderTextColor={theme.colors.muted}
-          value={search}
-          onChangeText={setSearch}
-        />
-        {search.length > 0 && (
-          <TouchableOpacity onPress={() => setSearch('')} hitSlop={8}>
-            <Ionicons name="close-circle" size={18} color={theme.colors.muted} />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {isLoading
-        ? <ActivityIndicator style={{ marginTop: 40 }} size="large" color={theme.colors.brand} />
-        : (
+      {/* ── WHITE CARD SECTION ── */}
+      <View style={[styles.mainCard, { overflow: 'hidden' }]}>
+        {isLoading && !workshops ? (
+           <View style={styles.centered}><ActivityIndicator size="large" color="#F56E0F" /></View>
+        ) : isError ? (
+          <ErrorScreen onRetry={refetch} variant="inline" />
+        ) : (
           <FlashList<Workshop>
-            data={workshops}
-            keyExtractor={w => w._id ?? w.id ?? w.name}
-            renderItem={({ item }) => <WorkshopCard item={item} onDelete={handleDelete} />}
+            data={workshops || []}
+            keyExtractor={item => item._id || item.id}
+            renderItem={({ item }) => <WorkshopCard workshop={item} />}
             estimatedItemSize={140}
             onRefresh={refetch}
             refreshing={isLoading}
             contentContainerStyle={styles.list}
-            ListEmptyComponent={<EmptyState message="No workshops found." />}
+            ListEmptyComponent={<EmptyState message="No workshops found. Create your first one!" />}
           />
-        )
-      }
+        )}
+      </View>
+
+      {/* CREATE MODAL */}
+      <Modal visible={modalVisible} animationType="fade" transparent>
+        <View style={styles.modalBg}>
+          <View style={styles.modalContent}>
+             <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Register Workshop</Text>
+                <TouchableOpacity onPress={() => setModalVisible(false)}>
+                   <Ionicons name="close" size={24} color="#6B7280" />
+                </TouchableOpacity>
+             </View>
+
+             <ScrollView showsVerticalScrollIndicator={false}>
+                 <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Workshop Name</Text>
+                    <TextInput style={styles.input} placeholder="e.g. Master Motors" value={formData.name} onChangeText={t => setFormData(f => ({...f, name:t}))} />
+                 </View>
+                 <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Full Address</Text>
+                    <TextInput style={styles.input} placeholder="Street, City" value={formData.address} onChangeText={t => setFormData(f => ({...f, address:t}))} />
+                 </View>
+                 <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Contact Number</Text>
+                    <TextInput style={styles.input} placeholder="+94 XX XXX XXXX" value={formData.contactNumber} onChangeText={t => setFormData(f => ({...f, contactNumber:t}))} />
+                 </View>
+                 <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>District</Text>
+                    <TextInput style={styles.input} placeholder="Colombo" value={formData.district} onChangeText={t => setFormData(f => ({...f, district:t}))} />
+                 </View>
+             </ScrollView>
+
+             <TouchableOpacity 
+               style={[styles.saveBtn, isPending && { opacity: 0.7 }]} 
+               onPress={handleCreate} 
+               disabled={isPending}
+             >
+                {isPending ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>Save Workshop</Text>}
+             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScreenWrapper>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create((theme) => ({
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.md, paddingBottom: theme.spacing.lg,
-    backgroundColor: theme.colors.surface, borderBottomWidth: 1, borderBottomColor: theme.colors.border,
+  topSection: { 
+    paddingHorizontal: theme.spacing.screenPadding, 
+    paddingTop: 16, 
+    paddingBottom: theme.spacing.headerBottom, 
+    position: 'relative', 
+    overflow: 'hidden' 
   },
-  headerTitle: { fontSize: 24, fontWeight: '900', color: theme.colors.text, letterSpacing: -0.5 },
-  headerSub: { fontSize: 13, color: theme.colors.muted, fontWeight: '600', marginTop: 2 },
-  headerRight: { flexDirection: 'row', alignItems: 'center' },
-  addBtn: {
-    width: 40, height: 40, borderRadius: 10,
-    backgroundColor: theme.colors.brand, alignItems: 'center', justifyContent: 'center',
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 },
+  headerSub: { 
+    fontSize: theme.fonts.sizes.caption, 
+    color: 'rgba(255,255,255,0.7)', 
+    fontWeight: '700', 
+    textTransform: 'uppercase', 
+    letterSpacing: 1 
+  },
+  headerTitle: { 
+    fontSize: theme.fonts.sizes.pageTitle, 
+    color: '#FFFFFF', 
+    fontWeight: '900', 
+    letterSpacing: -0.5, 
+    marginTop: 4 
+  },
+  addBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#F56E0F', alignItems: 'center', justifyContent: 'center', shadowColor: '#F56E0F', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 },
+
+  decCircle1: { position: 'absolute', width: 130, height: 130, borderRadius: 65, backgroundColor: 'rgba(245,110,15,0.13)', top: -25, right: -25 },
+  decCircle2: { position: 'absolute', width: 70, height: 70, borderRadius: 35, backgroundColor: 'rgba(245,110,15,0.08)', bottom: 10, right: 90 },
+
+  mainCard: { 
+    backgroundColor: '#FFFFFF', 
+    borderTopLeftRadius: 32, 
+    borderTopRightRadius: 32, 
+    marginTop: theme.spacing.cardOverlap, 
+    flex: 1, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: -4 }, 
+    shadowOpacity: 0.1, 
+    shadowRadius: 20, 
+    elevation: 16 
+  },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  list: { 
+    paddingHorizontal: theme.spacing.screenPadding, 
+    paddingTop: 24, 
+    paddingBottom: 130 
   },
 
-  searchBar: {
-    flexDirection: 'row', alignItems: 'center',
-    marginHorizontal: theme.spacing.md, marginBottom: 16,
-    paddingHorizontal: 14, height: 48,
-    backgroundColor: theme.colors.surface, borderRadius: 12,
-    borderWidth: 1, borderColor: theme.colors.border, gap: 10,
-  },
-  searchInput: { flex: 1, fontSize: 14, color: theme.colors.text },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: 18, marginBottom: 16, borderWidth: 1.5, borderColor: '#F3F4F6', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 14 },
+  workshopIcon: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#FFF7ED', alignItems: 'center', justifyContent: 'center' },
+  workshopName: { fontSize: 16, fontWeight: '900', color: '#1A1A2E' },
+  workshopLocation: { fontSize: 13, color: '#9CA3AF', fontWeight: '500', marginTop: 1 },
+  manageBtn: { width: 32, height: 32, borderRadius: 8, backgroundColor: '#F9FAFB', alignItems: 'center', justifyContent: 'center' },
+  
+  cardFooter: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F3F4F6' },
+  stat: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  statText: { fontSize: 12, fontWeight: '700', color: '#6B7280' },
+  statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, marginLeft: 'auto' },
+  statusDot: { width: 5, height: 5, borderRadius: 2.5 },
+  statusText: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
 
-  list: { paddingHorizontal: theme.spacing.md, paddingBottom: 120 },
-
-  card: {
-    backgroundColor: theme.colors.surface, borderRadius: theme.radii.lg,
-    padding: theme.spacing.md, marginBottom: theme.spacing.sm,
-    borderWidth: 1, borderColor: theme.colors.border,
-  },
-  cardRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 12 },
-  iconBox: {
-    width: 46, height: 46, borderRadius: 12,
-    backgroundColor: theme.colors.brandSoft, alignItems: 'center', justifyContent: 'center',
-  },
-  cardInfo: { flex: 1, gap: 3 },
-  cardName: { fontSize: 15, fontWeight: '800', color: theme.colors.text },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  metaText: { fontSize: 12, color: theme.colors.muted, flex: 1 },
-
-  deleteBtn: {
-    width: 36, height: 36, borderRadius: 10,
-    backgroundColor: '#FEF2F2', alignItems: 'center', justifyContent: 'center',
-  },
-
-  footerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  ratingChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: '#FFFBEB', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
-  },
-  ratingText: { fontSize: 11, fontWeight: '700', color: '#92400E' },
-  services: { flex: 1, fontSize: 11, color: theme.colors.muted, fontWeight: '500' },
-}));
-
-const modal = StyleSheet.create((theme) => ({
-  container: { flex: 1, backgroundColor: theme.colors.surface },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.lg, paddingBottom: theme.spacing.md,
-    borderBottomWidth: 1, borderBottomColor: theme.colors.border,
-  },
-  title: { fontSize: 18, fontWeight: '800', color: theme.colors.text },
-  body: { padding: theme.spacing.md, gap: 16, paddingBottom: 60 },
-
-  errorBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#FEF2F2', padding: 12, borderRadius: 10,
-    borderWidth: 1, borderColor: '#FECACA',
-  },
-  errorText: { flex: 1, fontSize: 13, color: '#DC2626', fontWeight: '600' },
-
-  field: { gap: 6 },
-  label: { fontSize: 13, fontWeight: '700', color: theme.colors.text },
-  input: {
-    height: 48, paddingHorizontal: 14, borderRadius: 10,
-    borderWidth: 1, borderColor: theme.colors.border,
-    backgroundColor: theme.colors.background, fontSize: 14, color: theme.colors.text,
-  },
-
-  submitBtn: {
-    height: 52, borderRadius: 12, backgroundColor: theme.colors.brand,
-    alignItems: 'center', justifyContent: 'center', marginTop: 8,
-  },
-  submitText: { fontSize: 16, fontWeight: '800', color: '#fff' },
+  modalBg: { flex: 1, backgroundColor: 'rgba(26,26,46,0.8)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '85%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  modalTitle: { fontSize: 20, fontWeight: '900', color: '#1A1A2E' },
+  inputGroup: { marginBottom: 16 },
+  inputLabel: { fontSize: 12, fontWeight: '800', color: '#6B7280', textTransform: 'uppercase', marginBottom: 8, marginLeft: 4 },
+  input: { backgroundColor: '#F9FAFB', borderRadius: 14, height: 50, paddingHorizontal: 16, fontSize: 15, color: '#1A1A2E', borderWidth: 1, borderColor: '#E5E7EB' },
+  saveBtn: { backgroundColor: '#F56E0F', borderRadius: 16, height: 56, alignItems: 'center', justifyContent: 'center', marginTop: 16, shadowColor: '#F56E0F', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6 },
+  saveBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' }
 }));

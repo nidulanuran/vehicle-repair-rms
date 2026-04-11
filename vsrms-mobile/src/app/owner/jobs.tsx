@@ -1,166 +1,153 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ActivityIndicator, StatusBar, TouchableOpacity } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { StyleSheet, useUnistyles } from 'react-native-unistyles';
+import { StyleSheet } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
-import { ErrorScreen } from '@/components/feedback/ErrorScreen';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { useAuth } from '@/hooks';
 import { useWorkshopAppointments } from '@/features/appointments/queries/queries';
-import { useUpdateAppointmentStatus } from '@/features/appointments/queries/mutations';
 import { Appointment } from '@/features/appointments/types/appointments.types';
+import { ErrorScreen } from '@/components/feedback/ErrorScreen';
+import { EmptyState } from '@/components/ui/EmptyState';
 
-function getVehicleLabel(a: Appointment): string {
-  if (typeof a.vehicleId === 'object') {
-    return `${a.vehicleId.make} ${a.vehicleId.model}`;
-  }
-  return 'Vehicle';
-}
-
-function getVehicleReg(a: Appointment): string {
-  if (typeof a.vehicleId === 'object') return a.vehicleId.registrationNo;
-  return a.vehicleId;
-}
-
-function getCustomerLabel(a: Appointment): string {
-  if (typeof a.userId === 'object') return a.userId.fullName ?? a.userId.email;
-  return 'Customer';
-}
-
-function JobCard({
-  item, onComplete,
-}: {
-  item: Appointment;
-  onComplete: (id: string) => void;
-}) {
-  const { theme } = useUnistyles();
-  const id = item._id ?? item.id ?? '';
+function JobCard({ job }: { job: Appointment }) {
+  const customerName = typeof job.userId === 'object' ? job.userId.fullName : 'Customer';
+  const vehicleName = typeof job.vehicleId === 'object' ? `${job.vehicleId.make} ${job.vehicleId.model}` : 'Vehicle';
 
   return (
     <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <View style={styles.vehicleBlock}>
-          <Text style={styles.vehicleName}>{getVehicleLabel(item)}</Text>
-          <Text style={styles.vehicleReg}>{getVehicleReg(item)}</Text>
+      <View style={styles.cardRow}>
+        <View style={styles.jobIcon}>
+          <Ionicons name="construct-outline" size={24} color="#F56E0F" />
         </View>
-        <View style={styles.inProgressBadge}>
-          <View style={styles.inProgressDot} />
-          <Text style={styles.inProgressText}>In Progress</Text>
+        <View style={styles.jobMain}>
+          <Text style={styles.jobTitle}>{customerName}</Text>
+          <Text style={styles.jobSub}>{vehicleName}</Text>
+          <View style={styles.tagRow}>
+             <View style={styles.serviceTag}>
+                <Text style={styles.serviceTagText}>{job.serviceType}</Text>
+             </View>
+             <View style={styles.statusBadge}>
+                <View style={styles.statusDot} />
+                <Text style={styles.statusText}>In Progress</Text>
+             </View>
+          </View>
         </View>
+        <TouchableOpacity style={styles.detailBtn}>
+           <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+        </TouchableOpacity>
       </View>
-
-      <View style={styles.metaRow}>
-        <Ionicons name="person-outline" size={14} color={theme.colors.muted} />
-        <Text style={styles.metaText}>{getCustomerLabel(item)}</Text>
-      </View>
-      <View style={styles.metaRow}>
-        <Ionicons name="construct-outline" size={14} color={theme.colors.muted} />
-        <Text style={styles.metaText}>{item.serviceType}</Text>
-      </View>
-      <View style={styles.metaRow}>
-        <Ionicons name="calendar-outline" size={14} color={theme.colors.muted} />
-        <Text style={styles.metaText}>
-          {new Date(item.scheduledDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
-        </Text>
-      </View>
-
-      <TouchableOpacity style={styles.completeBtn} onPress={() => onComplete(id)}>
-        <Ionicons name="checkmark-circle-outline" size={18} color="#fff" />
-        <Text style={styles.completeBtnText}>Mark as Completed</Text>
-      </TouchableOpacity>
     </View>
   );
 }
 
-export default function JobTrackerScreen() {
-  const { theme } = useUnistyles();
-  const router = useRouter();
+export default function OwnerJobsScreen() {
   const { user } = useAuth();
-
-  const workshopId = user?.workshopId;
-  const { data, isLoading, isError, refetch } = useWorkshopAppointments(workshopId, 'in_progress');
-  const { mutate: updateStatus, isPending } = useUpdateAppointmentStatus();
-
-  const handleComplete = (id: string) => {
-    Alert.alert('Complete Job', 'Mark this job as completed?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Complete', onPress: () => updateStatus({ id, status: 'completed' }) },
-    ]);
-  };
-
-  if (isError) return <ErrorScreen onRetry={refetch} />;
+  const { data, isLoading, isError, refetch } = useWorkshopAppointments(user?.workshopId, 'in_progress');
 
   return (
-    <ScreenWrapper bg={theme.colors.surface}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} hitSlop={8}>
-          <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Active Jobs</Text>
-        {isPending
-          ? <ActivityIndicator color={theme.colors.brand} />
-          : <View style={{ width: 28 }} />
-        }
+    <ScreenWrapper bg="#1A1A2E">
+      <StatusBar barStyle="light-content" backgroundColor="#1A1A2E" />
+
+      {/* ── DARK TOP SECTION ── */}
+      <View style={styles.topSection}>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.headerSub}>Operations</Text>
+            <Text style={styles.headerTitle}>Active Jobs</Text>
+          </View>
+          <View style={styles.badge}>
+             <Ionicons name="flash-outline" size={22} color="#FFFFFF" />
+          </View>
+        </View>
+
+        <View style={styles.decCircle1} />
+        <View style={styles.decCircle2} />
       </View>
 
-      {isLoading
-        ? <ActivityIndicator style={{ marginTop: 40 }} size="large" color={theme.colors.brand} />
-        : (
-          <FlashList<Appointment>
-            data={data ?? []}
-            keyExtractor={a => a._id ?? a.id ?? ''}
-            renderItem={({ item }) => <JobCard item={item} onComplete={handleComplete} />}
-            estimatedItemSize={180}
-            onRefresh={refetch}
-            refreshing={isLoading}
-            contentContainerStyle={styles.list}
-            ListEmptyComponent={<EmptyState message="No active jobs right now." />}
+      {/* ── WHITE CARD SECTION ── */}
+      <View style={[styles.mainCard, { overflow: 'hidden' }]}>
+        {isLoading && !data ? (
+          <View style={styles.centered}><ActivityIndicator size="large" color="#F56E0F" /></View>
+        ) : isError ? (
+          <ErrorScreen onRetry={refetch} variant="inline" />
+        ) : (
+          <FlashList
+             data={(data || []) as Appointment[]}
+             renderItem={({ item }) => <JobCard job={item as Appointment} />}
+             estimatedItemSize={120}
+             onRefresh={refetch}
+             refreshing={isLoading}
+             keyExtractor={(a: Appointment) => a._id || a.id || Math.random().toString()}
+             contentContainerStyle={styles.list}
+             ListEmptyComponent={<EmptyState message="No active jobs in the workshop currently." />}
           />
-        )
-      }
+        )}
+      </View>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create((theme) => ({
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.md,
-    backgroundColor: theme.colors.surface, borderBottomWidth: 1, borderBottomColor: theme.colors.border,
+  topSection: { 
+    paddingHorizontal: theme.spacing.screenPadding, 
+    paddingTop: 16, 
+    paddingBottom: theme.spacing.headerBottom, 
+    position: 'relative', 
+    overflow: 'hidden' 
   },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: theme.colors.text },
-  backBtn: {
-    width: 36, height: 36, borderRadius: 10,
-    alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background,
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 },
+  headerSub: { 
+    fontSize: theme.fonts.sizes.caption, 
+    color: 'rgba(255,255,255,0.7)', 
+    fontWeight: '700', 
+    textTransform: 'uppercase', 
+    letterSpacing: 1 
+  },
+  headerTitle: { 
+    fontSize: theme.fonts.sizes.pageTitle, 
+    color: '#FFFFFF', 
+    fontWeight: '900', 
+    letterSpacing: -0.5, 
+    marginTop: 4 
+  },
+  badge: { width: 48, height: 48, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
+
+  decCircle1: { position: 'absolute', width: 130, height: 130, borderRadius: 65, backgroundColor: 'rgba(245,110,15,0.13)', top: -25, right: -25 },
+  decCircle2: { position: 'absolute', width: 70, height: 70, borderRadius: 35, backgroundColor: 'rgba(245,110,15,0.08)', bottom: 10, right: 90 },
+
+  mainCard: { 
+    backgroundColor: '#FFFFFF', 
+    borderTopLeftRadius: 32, 
+    borderTopRightRadius: 32, 
+    marginTop: theme.spacing.cardOverlap, 
+    flex: 1, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: -4 }, 
+    shadowOpacity: 0.1, 
+    shadowRadius: 20, 
+    elevation: 16 
+  },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  list: { 
+    paddingHorizontal: theme.spacing.screenPadding, 
+    paddingTop: 24, 
+    paddingBottom: 130 
   },
 
-  list: { paddingHorizontal: theme.spacing.md, paddingBottom: 100 },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: 18, marginBottom: 16, borderWidth: 1.5, borderColor: '#F3F4F6', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2 },
+  cardRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  jobIcon: { width: 50, height: 50, borderRadius: 14, backgroundColor: '#FFF7ED', alignItems: 'center', justifyContent: 'center' },
+  jobMain: { flex: 1 },
+  jobTitle: { fontSize: 16, fontWeight: '900', color: '#1A1A2E' },
+  jobSub: { fontSize: 13, color: '#6B7280', fontWeight: '600', marginTop: 2 },
+  
+  tagRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
+  serviceTag: { backgroundColor: '#EFF6FF', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  serviceTagText: { fontSize: 10, fontWeight: '800', color: '#2563EB', textTransform: 'uppercase' },
+  statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#FFF7ED', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  statusDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#F56E0F' },
+  statusText: { fontSize: 10, fontWeight: '800', color: '#F56E0F', textTransform: 'uppercase' },
 
-  card: {
-    backgroundColor: theme.colors.surface, borderRadius: theme.radii.lg,
-    padding: theme.spacing.md, marginBottom: theme.spacing.sm,
-    borderWidth: 1, borderColor: theme.colors.border,
-  },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
-  vehicleBlock: { flex: 1 },
-  vehicleName: { fontSize: 16, fontWeight: '900', color: theme.colors.text, letterSpacing: -0.3 },
-  vehicleReg: { fontSize: 12, color: theme.colors.muted, fontWeight: '600', marginTop: 2 },
-
-  inProgressBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: '#EFF6FF', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8,
-  },
-  inProgressDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#3B82F6' },
-  inProgressText: { fontSize: 11, fontWeight: '800', color: '#2563EB' },
-
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  metaText: { fontSize: 13, color: theme.colors.muted, fontWeight: '500' },
-
-  completeBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    height: 44, borderRadius: 10, backgroundColor: '#059669', marginTop: 14,
-  },
-  completeBtnText: { fontSize: 14, fontWeight: '800', color: '#fff' },
+  detailBtn: { width: 32, height: 32, borderRadius: 10, backgroundColor: '#F9FAFB', alignItems: 'center', justifyContent: 'center' },
 }));

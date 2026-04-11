@@ -27,8 +27,8 @@ export default function AdminOverviewScreen() {
       <View style={styles.topSection}>
         <View style={styles.headerTextRow}>
           <View style={styles.headerText}>
-            <Text style={styles.greeting}>Platform Admin</Text>
-            <Text style={styles.userName} numberOfLines={1}>{displayName}</Text>
+            <Text style={styles.headerSub}>Platform Control</Text>
+            <Text style={styles.headerTitle} numberOfLines={1}>{displayName}</Text>
           </View>
           <TouchableOpacity style={styles.avatar} activeOpacity={0.8} onPress={() => signOut()}>
             <Text style={styles.avatarText}>{initials}</Text>
@@ -66,7 +66,7 @@ export default function AdminOverviewScreen() {
 
           {/* Minimalist Chart */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Monthly Activity</Text>
+            <Text style={styles.sectionTitle}>System Activity</Text>
             <View style={styles.chartPlaceholder}>
               <View style={styles.chartBars}>
                 {[40, 60, 45, 80, 55, 90, 70].map((h, i) => (
@@ -86,20 +86,20 @@ export default function AdminOverviewScreen() {
           {/* System Logs */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>System Logs</Text>
+              <Text style={styles.sectionTitle}>Event Logs</Text>
             </View>
             <View style={styles.logsBox}>
               <View style={styles.logItem}>
                 <View style={[styles.logDot, { backgroundColor: '#10B981' }]} />
                 <View style={styles.logInfo}>
-                  <Text style={styles.logText}>New Service Center registered</Text>
+                  <Text style={styles.logText}>New Garage: City Motors registered</Text>
                   <Text style={styles.logTime}>2 mins ago</Text>
                 </View>
               </View>
               <View style={[styles.logItem, { borderBottomWidth: 0 }]}>
                 <View style={[styles.logDot, { backgroundColor: '#F59E0B' }]} />
                 <View style={styles.logInfo}>
-                  <Text style={styles.logText}>High server load detected</Text>
+                  <Text style={styles.logText}>Database maintenance scheduled</Text>
                   <Text style={styles.logTime}>15 mins ago</Text>
                 </View>
               </View>
@@ -112,14 +112,32 @@ export default function AdminOverviewScreen() {
 }
 
 const styles = StyleSheet.create((theme) => ({
-  topSection: { paddingHorizontal: 28, paddingTop: 16, paddingBottom: 64, position: 'relative', overflow: 'hidden' },
+  topSection: { 
+    paddingHorizontal: theme.spacing.screenPadding, 
+    paddingTop: 16, 
+    paddingBottom: theme.spacing.headerBottom, 
+    position: 'relative', 
+    overflow: 'hidden' 
+  },
   headerTextRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 },
   headerText: { flex: 1 },
-  greeting: { fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 },
-  userName: { fontSize: 26, color: '#FFFFFF', fontWeight: '900', letterSpacing: -0.5, marginTop: 4 },
+  headerSub: { 
+    fontSize: theme.fonts.sizes.caption, 
+    color: 'rgba(255,255,255,0.7)', 
+    fontWeight: '700', 
+    textTransform: 'uppercase', 
+    letterSpacing: 1 
+  },
+  headerTitle: { 
+    fontSize: theme.fonts.sizes.pageTitle, 
+    color: '#FFFFFF', 
+    fontWeight: '900', 
+    letterSpacing: -0.5, 
+    marginTop: 4 
+  },
   
   avatar: {
-    width: 46, height: 46, borderRadius: 12, backgroundColor: 'rgba(245,110,15,0.15)',
+    width: 48, height: 48, borderRadius: 14, backgroundColor: 'rgba(245,110,15,0.15)',
     alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#F56E0F',
     position: 'relative',
   },
@@ -129,18 +147,33 @@ const styles = StyleSheet.create((theme) => ({
   decCircle1: { position: 'absolute', width: 130, height: 130, borderRadius: 65, backgroundColor: 'rgba(245,110,15,0.13)', top: -25, right: -25 },
   decCircle2: { position: 'absolute', width: 70, height: 70, borderRadius: 35, backgroundColor: 'rgba(245,110,15,0.08)', bottom: 10, right: 90 },
 
-  mainCard: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 32, borderTopRightRadius: 32, marginTop: -38, flex: 1, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 16 },
-  scroll: { paddingHorizontal: 24, paddingTop: 28, paddingBottom: 130 },
+  mainCard: { 
+    backgroundColor: '#FFFFFF', 
+    borderTopLeftRadius: 32, 
+    borderTopRightRadius: 32, 
+    marginTop: theme.spacing.cardOverlap, 
+    flex: 1, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: -4 }, 
+    shadowOpacity: 0.1, 
+    shadowRadius: 20, 
+    elevation: 16 
+  },
+  scroll: { 
+    paddingHorizontal: theme.spacing.screenPadding, 
+    paddingTop: 28, 
+    paddingBottom: 130 
+  },
 
   statsGrid: { flexDirection: 'row', gap: 14, marginBottom: 32 },
-  statCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 18, padding: 16, alignItems: 'center', borderWidth: 1.5, borderColor: '#F3F4F6', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2 },
+  statCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 18, padding: 16, alignItems: 'center', borderWidth: 1.5, borderColor: '#F3F4F6' },
   statIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   statValue: { fontSize: 30, fontWeight: '900', color: '#1A1A2E', marginBottom: 2 },
   statLabel: { fontSize: 10, color: '#6B7280', fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
 
   section: { marginBottom: 32 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: '900', color: '#1A1A2E', letterSpacing: -0.3 },
+  sectionTitle: { fontSize: theme.fonts.sizes.sectionTitle, fontWeight: '900', color: '#1A1A2E', letterSpacing: -0.3 },
 
   chartPlaceholder: { backgroundColor: '#FAFAFA', borderRadius: 20, padding: 24, borderWidth: 1.5, borderColor: '#F3F4F6', alignItems: 'center' },
   chartBars: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', width: '100%', height: 120, marginBottom: 16 },

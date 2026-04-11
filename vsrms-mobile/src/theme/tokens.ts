@@ -27,6 +27,10 @@ export const spacing = {
   lg: 24,
   xl: 32,
   xxl: 48,
+  // Layout Standards
+  screenPadding: 24,
+  headerBottom: 64,
+  cardOverlap: -38,
 } as const;
 
 export const radii = {

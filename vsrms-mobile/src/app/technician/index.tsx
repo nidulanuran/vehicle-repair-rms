@@ -37,8 +37,8 @@ export default function TechnicianDashboardScreen() {
       <View style={styles.topSection}>
         <View style={styles.headerTextRow}>
           <View style={styles.headerText}>
-            <Text style={styles.greeting}>Staff Dashboard</Text>
-            <Text style={styles.userName} numberOfLines={1}>Hello, {displayName}</Text>
+            <Text style={styles.headerSub}>Technical Assistant</Text>
+            <Text style={styles.headerTitle} numberOfLines={1}>Hello, {displayName}</Text>
           </View>
           <TouchableOpacity style={styles.avatar} activeOpacity={0.8} onPress={() => signOut()}>
             <Text style={styles.avatarText}>{initials}</Text>
@@ -62,25 +62,25 @@ export default function TechnicianDashboardScreen() {
                  <Ionicons name="hammer" size={24} color="#F56E0F" />
                </View>
                {iLoad ? <ActivityIndicator size="small" color="#F56E0F" /> : <Text style={styles.statValue}>{inProgress?.length ?? 0}</Text>}
-               <Text style={styles.statLabel}>In Progress</Text>
+               <Text style={styles.statLabel}>Active Jobs</Text>
             </View>
             <View style={styles.statCard}>
                <View style={[styles.statIcon, { backgroundColor: '#FEF3C7' }]}>
-                 <Ionicons name="time" size={24} color="#D97706" />
+                 <Ionicons name="calendar-outline" size={24} color="#D97706" />
                </View>
                {pLoad ? <ActivityIndicator size="small" color="#F59E0B" /> : <Text style={styles.statValue}>{pending?.length ?? 0}</Text>}
-               <Text style={styles.statLabel}>Pending</Text>
+               <Text style={styles.statLabel}>New Appts</Text>
             </View>
           </View>
 
           {/* Quick Actions */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Shift Actions</Text>
+            <Text style={styles.sectionTitle}>Daily Operations</Text>
             <View style={styles.quickLinks}>
               {[
-                { icon: 'calendar-outline' as const, label: 'Appointments', href: '/technician/appointments' },
-                { icon: 'hammer-outline' as const,   label: 'Job Tracker',  href: '/technician/tracker' },
-                { icon: 'document-text-outline' as const, label: 'New Record', href: '/technician/record' },
+                { icon: 'calendar-outline' as const, label: 'Schedule',   href: '/technician/appointments' },
+                { icon: 'construct-outline' as const, label: 'Work Tracker', href: '/technician/tracker' },
+                { icon: 'document-text-outline' as const, label: 'Add Record', href: '/technician/record' },
               ].map(a => (
                 <TouchableOpacity key={a.label} style={styles.actionBtn} onPress={() => router.push(a.href as any)} activeOpacity={0.7}>
                   <View style={styles.actionIconBox}>
@@ -95,9 +95,9 @@ export default function TechnicianDashboardScreen() {
           {/* Active Jobs */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>My Task Queue</Text>
+              <Text style={styles.sectionTitle}>Task Queue</Text>
               <TouchableOpacity onPress={() => router.push('/technician/tracker' as any)}>
-                <Text style={styles.linkText}>See All</Text>
+                <Text style={styles.linkText}>See Full List</Text>
               </TouchableOpacity>
             </View>
 
@@ -138,42 +138,75 @@ export default function TechnicianDashboardScreen() {
 }
 
 const styles = StyleSheet.create((theme) => ({
-  topSection: { paddingHorizontal: 28, paddingTop: 16, paddingBottom: 64, position: 'relative', overflow: 'hidden' },
+  topSection: { 
+    paddingHorizontal: theme.spacing.screenPadding, 
+    paddingTop: 16, 
+    paddingBottom: theme.spacing.headerBottom, 
+    position: 'relative', 
+    overflow: 'hidden' 
+  },
   headerTextRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 },
   headerText: { flex: 1 },
-  greeting: { fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 },
-  userName: { fontSize: 26, color: '#FFFFFF', fontWeight: '900', letterSpacing: -0.5, marginTop: 4 },
+  headerSub: { 
+    fontSize: theme.fonts.sizes.caption, 
+    color: 'rgba(255,255,255,0.7)', 
+    fontWeight: '700', 
+    textTransform: 'uppercase', 
+    letterSpacing: 1 
+  },
+  headerTitle: { 
+    fontSize: theme.fonts.sizes.pageTitle, 
+    color: '#FFFFFF', 
+    fontWeight: '900', 
+    letterSpacing: -0.5, 
+    marginTop: 4 
+  },
   
-  avatar: { width: 46, height: 46, borderRadius: 12, backgroundColor: 'rgba(245,110,15,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#F56E0F' },
+  avatar: { width: 48, height: 48, borderRadius: 14, backgroundColor: 'rgba(245,110,15,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#F56E0F' },
   avatarText: { fontSize: 16, fontWeight: '900', color: '#F56E0F' },
   logoutIcon: { position: 'absolute', bottom: -6, right: -6, backgroundColor: '#F56E0F', borderRadius: 10, padding: 3, borderWidth: 1.5, borderColor: '#1A1A2E' },
 
   decCircle1: { position: 'absolute', width: 130, height: 130, borderRadius: 65, backgroundColor: 'rgba(245,110,15,0.13)', top: -25, right: -25 },
   decCircle2: { position: 'absolute', width: 70, height: 70, borderRadius: 35, backgroundColor: 'rgba(245,110,15,0.08)', bottom: 10, right: 90 },
 
-  mainCard: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 32, borderTopRightRadius: 32, marginTop: -38, flex: 1, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 16 },
-  scroll: { paddingHorizontal: 24, paddingTop: 28, paddingBottom: 130 },
+  mainCard: { 
+    backgroundColor: '#FFFFFF', 
+    borderTopLeftRadius: 32, 
+    borderTopRightRadius: 32, 
+    marginTop: theme.spacing.cardOverlap, 
+    flex: 1, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: -4 }, 
+    shadowOpacity: 0.1, 
+    shadowRadius: 20, 
+    elevation: 16 
+  },
+  scroll: { 
+    paddingHorizontal: theme.spacing.screenPadding, 
+    paddingTop: 24, 
+    paddingBottom: 130 
+  },
 
   statsGrid: { flexDirection: 'row', gap: 12, marginBottom: 32 },
-  statCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, alignItems: 'center', borderWidth: 1.5, borderColor: '#F3F4F6', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2 },
-  statIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  statCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, alignItems: 'center', borderWidth: 1.5, borderColor: '#F3F4F6', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2 },
+  statIcon: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   statValue: { fontSize: 26, fontWeight: '900', color: '#1A1A2E', marginBottom: 2 },
   statLabel: { fontSize: 10, color: '#6B7280', fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
 
   section: { marginBottom: 32 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: '900', color: '#1A1A2E', letterSpacing: -0.3, marginBottom: 16 },
+  sectionTitle: { fontSize: theme.fonts.sizes.sectionTitle, fontWeight: '900', color: '#1A1A2E', letterSpacing: -0.3 },
   linkText: { fontSize: 13, fontWeight: '800', color: '#F56E0F', letterSpacing: 0.2 },
 
   quickLinks: { flexDirection: 'row', gap: 12 },
   actionBtn: { flex: 1, alignItems: 'center' },
-  actionIconBox: { width: 56, height: 56, borderRadius: 16, backgroundColor: '#FAFAFA', alignItems: 'center', justifyContent: 'center', marginBottom: 8, borderWidth: 1.5, borderColor: '#E5E7EB' },
+  actionIconBox: { width: 62, height: 62, borderRadius: 20, backgroundColor: '#FAFAFA', alignItems: 'center', justifyContent: 'center', marginBottom: 8, borderWidth: 1.5, borderColor: '#E5E7EB' },
   actionText: { fontSize: 11, fontWeight: '800', color: '#6B7280', textAlign: 'center' },
 
-  emptyCard: { backgroundColor: '#FAFAFA', borderRadius: 16, padding: 32, alignItems: 'center', borderWidth: 1.5, borderColor: '#F3F4F6', borderStyle: 'dashed' },
-  emptyText: { fontSize: 14, fontWeight: '700', color: '#9CA3AF', marginTop: 12 },
+  emptyCard: { backgroundColor: '#FAFAFA', borderRadius: 20, padding: 32, alignItems: 'center', borderWidth: 1.5, borderColor: '#F3F4F6', borderStyle: 'dashed' },
+  emptyText: { fontSize: 13, fontWeight: '800', color: '#9CA3AF', marginTop: 12 },
 
-  taskCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 18, marginBottom: 12, borderWidth: 1.5, borderColor: '#F3F4F6', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1 },
+  taskCard: { backgroundColor: '#FFFFFF', borderRadius: 22, padding: 18, marginBottom: 12, borderWidth: 1.5, borderColor: '#F3F4F6', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1 },
   taskHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   statusBadge: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 8 },
   statusText: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 0.5 },
