@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, StatusBar } from 'react-native';
+import { useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native-unistyles';
@@ -69,6 +70,7 @@ function BookingCard({
 }
 
 export default function BookingsScreen() {
+  const router = useRouter();
   const { user } = useAuth();
   const [status, setStatus] = useState<'pending' | 'confirmed' | 'completed' | 'cancelled'>('pending');
   
@@ -86,10 +88,17 @@ export default function BookingsScreen() {
       {/* ── DARK TOP SECTION ── */}
       <View style={styles.topSection}>
         <View style={styles.headerRow}>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.headerSub}>Management</Text>
             <Text style={styles.headerTitle}>Bookings</Text>
           </View>
+          <TouchableOpacity 
+            style={styles.jobsBtn} 
+            onPress={() => router.push('/owner/jobs' as any)}
+          >
+            <Ionicons name="hammer-outline" size={20} color="#FFFFFF" />
+            <Text style={styles.jobsBtnText}>Jobs</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Status Tabs */}
@@ -118,7 +127,7 @@ export default function BookingsScreen() {
           <View style={styles.centered}><ActivityIndicator size="large" color="#F56E0F" /></View>
         ) : isError ? (
           <ErrorScreen onRetry={refetch} variant="inline" />
-        ) : (
+                ) : (
           <FlashList
              data={(data || []) as Appointment[]}
              renderItem={({ item }) => <BookingCard appt={item as Appointment} onStatusChange={handleStatusUpdate} />}
@@ -157,6 +166,22 @@ const styles = StyleSheet.create((theme) => ({
     fontWeight: '900', 
     letterSpacing: -0.5, 
     marginTop: 4 
+  },
+  jobsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  jobsBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
   },
 
   tabContainer: { flexDirection: 'row', gap: 20, zIndex: 10 },

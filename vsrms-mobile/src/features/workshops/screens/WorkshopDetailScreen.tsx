@@ -1,9 +1,11 @@
 import React from 'react';
 import {
-  View, Text, Image, ScrollView, TouchableOpacity, ActivityIndicator,
+  View, Text, Image, ScrollView, TouchableOpacity, ActivityIndicator, Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { MapUtils } from '../../../utils/MapUtils';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { useWorkshop } from '../queries/queries';
@@ -81,11 +83,49 @@ export function WorkshopDetailScreen({ id: propId }: { id?: string }) {
 
           {/* ADDRESS */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Address</Text>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Address</Text>
+              <TouchableOpacity 
+                onPress={() => MapUtils.openMapDirections(
+                  workshop.location.coordinates[1], 
+                  workshop.location.coordinates[0], 
+                  workshop.name
+                )}
+                style={styles.directionsLink}
+              >
+                <Ionicons name="navigate-circle" size={18} color={theme.colors.brand} />
+                <Text style={styles.directionsLinkText}>Get Directions</Text>
+              </TouchableOpacity>
+            </View>
             <View style={styles.addressBox}>
               <Ionicons name="map-outline" size={16} color={theme.colors.muted} />
               <Text style={styles.sectionText}>{workshop.address}</Text>
             </View>
+          </View>
+
+          {/* MAP PREVIEW */}
+          <View style={styles.mapContainer}>
+            <MapView
+              provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
+              style={styles.detailMap}
+              region={{
+                latitude: workshop.location.coordinates[1],
+                longitude: workshop.location.coordinates[0],
+                latitudeDelta: 0.005,
+                longitudeDelta: 0.005,
+              }}
+              scrollEnabled={false}
+              zoomEnabled={false}
+              pitchEnabled={false}
+              rotateEnabled={false}
+            >
+              <Marker
+                coordinate={{
+                  latitude: workshop.location.coordinates[1],
+                  longitude: workshop.location.coordinates[0],
+                }}
+              />
+            </MapView>
           </View>
 
           {/* DESCRIPTION */}
@@ -115,8 +155,8 @@ export function WorkshopDetailScreen({ id: propId }: { id?: string }) {
           {reviews && reviews.length > 0 ? (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Customer Reviews</Text>
-              {reviews.slice(0, 3).map(r => (
-                <ReviewCard key={r._id} review={r} />
+              {reviews.slice(0, 3).map((r, i) => (
+                <ReviewCard key={r._id || i} review={r} />
               ))}
               {reviews.length > 3 ? (
                 <Text style={styles.moreReviews}>+{reviews.length - 3} more reviews</Text>
@@ -171,13 +211,30 @@ const styles = StyleSheet.create((theme) => ({
   infoChipText: { fontSize: 13, fontWeight: '700', color: theme.colors.brand },
 
   section: { marginBottom: 24 },
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: theme.colors.text, marginBottom: 10 },
+  sectionHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 10 
+  },
+  sectionTitle: { fontSize: 16, fontWeight: '800', color: theme.colors.text },
+  directionsLink: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  directionsLinkText: { fontSize: 13, fontWeight: '700', color: theme.colors.brand },
   addressBox: {
     flexDirection: 'row', gap: 8, alignItems: 'flex-start',
     backgroundColor: theme.colors.surface, borderRadius: 10, padding: 12,
     borderWidth: 1, borderColor: theme.colors.border,
   },
   sectionText: { flex: 1, fontSize: 14, color: theme.colors.muted, lineHeight: 22 },
+  mapContainer: {
+    height: 160,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  detailMap: { ...StyleSheet.absoluteFillObject },
   moreReviews: { fontSize: 13, color: theme.colors.brand, fontWeight: '700', textAlign: 'center', marginTop: 8 },
 
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

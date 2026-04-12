@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, ActivityIndicator, StatusBar } from 'react-native';
+import { View, Text, ActivityIndicator, StatusBar, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native-unistyles';
@@ -56,7 +57,7 @@ function RecordRow({ record }: { record: ServiceRecord }) {
         </View>
       </View>
 
-      {record.partsReplaced?.length > 0 ? (
+      {(record.partsReplaced && record.partsReplaced.length > 0) ? (
         <View style={styles.partsRow}>
           {record.partsReplaced.slice(0, 3).map((p, i) => (
             <View key={i} style={styles.partChip}>
@@ -75,6 +76,7 @@ function RecordRow({ record }: { record: ServiceRecord }) {
 }
 
 export default function OwnerLogsScreen() {
+  const router = useRouter();
   const { user } = useAuth();
   const workshopId = user?.workshopId as string | undefined;
   const { data, isLoading, isError, refetch } = useWorkshopRecords(workshopId ?? '');
@@ -86,13 +88,16 @@ export default function OwnerLogsScreen() {
       {/* ── DARK TOP SECTION ── */}
       <View style={styles.topSection}>
         <View style={styles.headerRow}>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.headerSub}>Workshop History</Text>
             <Text style={styles.headerTitle}>Service Logs</Text>
           </View>
-          <View style={styles.countBadge}>
-            <Text style={styles.countText}>{data?.total ?? 0}</Text>
-          </View>
+          <TouchableOpacity 
+            style={styles.addBtn} 
+            onPress={() => router.push('/owner/create-record' as any)}
+          >
+            <Ionicons name="add" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
         </View>
         <View style={styles.decCircle1} />
         <View style={styles.decCircle2} />
@@ -108,12 +113,12 @@ export default function OwnerLogsScreen() {
           <ErrorScreen onRetry={refetch} variant="inline" />
         ) : (
           <FlashList
-            data={(data?.data ?? []) as ServiceRecord[]}
-            renderItem={({ item }) => <RecordRow record={item as ServiceRecord} />}
+            data={(data?.data ?? []) as any}
+            renderItem={({ item }) => <RecordRow record={item as any} />}
             estimatedItemSize={180}
             onRefresh={refetch}
             refreshing={isLoading}
-            keyExtractor={(r: ServiceRecord) => r._id || r.id || Math.random().toString()}
+            keyExtractor={(r: any) => r._id || r.id || Math.random().toString()}
             contentContainerStyle={styles.list}
             ListEmptyComponent={<EmptyState message="No service records yet for this workshop." />}
           />
@@ -145,6 +150,19 @@ const styles = StyleSheet.create((theme) => ({
     fontWeight: '900',
     letterSpacing: -0.5,
     marginTop: 4,
+  },
+  addBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#F56E0F',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#F56E0F',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   countBadge: {
     width: 48, height: 48, borderRadius: 14,

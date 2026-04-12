@@ -175,6 +175,7 @@
 - [x] **BUG FIX B5**: `description` field in Workshop schema + createWorkshop/updateWorkshop; WorkshopDetailScreen shows it conditionally; admin garage form now has description + servicesOffered inputs
 - [x] **BUG FIX B6**: WorkshopDetailScreen "Book Appointment" button routes to `/customer/schedule/book?workshopId=…`; `app/customer/schedule/book.tsx` accepts workshopId param and pre-selects the workshop
 - [x] `app/admin/garages.tsx` — admin: create/edit/delete workshop form (FIXED crash); now includes description + servicesOffered fields
+- [x] Workshop Creator/Editor for Owners — integrated Map picker for location selection
 
 ### M4 — Appointments (Mobile)
 - [x] `features/appointments/types/appointments.types.ts`
@@ -202,6 +203,9 @@
 - [x] `app/owner/create-record.tsx` — route wrapper for AddRecordScreen
 - [x] `app/owner/index.tsx` — garage dashboard (summary stats, quick actions)
 - [x] `app/owner/bookings.tsx` — garage: view/manage bookings (appointments)
+- [x] `app/owner/workshops/` — owner workshop management (Integrated Map selection)
+- [x] `app/owner/staff.tsx` — technician management list for owners
+- [x] `app/owner/logs.tsx` — system/activity logs for the workshop
 
 ### M6 — Reviews (Mobile)
 - [x] `features/reviews/types/reviews.types.ts` — `userId` typed as union `string | { _id: string; fullName?: string; email: string }`
@@ -249,8 +253,10 @@
 - [ ] All forms validate fields and show inline errors before submit
 - [ ] Pull-to-refresh on all list screens
 - [ ] Haptic feedback on primary actions (Expo Haptics)
-- [ ] Vehicle card shows image (fallback if no imageUrl)
-- [ ] Vehicle image upload UI (expo-image-picker → POST /vehicles/:id/image)
+- [x] Workshop card shows image (fallback if no imageUrl)
+- [x] Vehicle image upload UI (expo-image-picker → POST /vehicles/:id/image)
+- [x] Custom Animated Tab Bar with sliding pill indicator
+- [x] User AvatarMenu with Modal grouping for Settings and Sign Out
 
 ### Security Hardening Checklist
 - [ ] Confirm express-validator chains on every POST and PUT route

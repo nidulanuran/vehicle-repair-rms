@@ -58,7 +58,7 @@ Dashboards standardized to premium Dark Header/White Card theme.
 | app/customer/schedule/ | ✓ Done | Book screen route implementation |
 | app/customer/workshops/ | ✓ Done | Book from workshop detail implementation |
 | app/technician/* | ✓ Done | Premium Dashboard + Appointments |
-| app/owner/* | ✓ Done | Premium Dashboard + Jobs |
+| app/owner/* | ✓ Done | Premium Dashboard + Jobs + Workshop Management + Staff |
 | app/admin/* | ✓ Done | Premium Dashboard + Garages (FIXED B8) |
 
 ---
@@ -135,7 +135,10 @@ Run through every item in the security checklist in TASK.md:
 | Soft delete for vehicles only | Vehicles have appointment/record history — hard delete would orphan foreign keys | Per spec |
 | averageRating denormalised on Workshop | avoids aggregation on every GET /workshops call which would be expensive on M0 | Per spec |
 | FlashList instead of FlatList | Significantly better performance for long lists (recycled cells) | Pre-existing |
-| mockSignIn in AuthProvider | Developer shortcut to quickly test role-based UI without Asgardeo credentials | Pre-existing — remove before final demo submission or guard behind `__DEV__` |
+| Custom Animated Tab Bar | High-end visual feedback with sliding pill indicator for better UX | 2026-04-12 |
+| AvatarMenu Layout | Consolidates settings and profile actions into a single modal to reduce tab bar clutter | 2026-04-12 |
+| workshop_owner CRUD | Owners can now manage their own workshops and technicians directly | 2026-04-12 |
+| mockSignIn in AuthProvider | Developer shortcut to quickly test role-based UI without Asgardeo credentials | Pre-existing |
 | Multer inline in controllers | Simpler than shared middleware for this scale; both M2 and M3 duplicate the upload logic | Pre-existing — acceptable for academic scale |
 
 ---

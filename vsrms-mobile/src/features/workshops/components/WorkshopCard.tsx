@@ -17,7 +17,7 @@ export function WorkshopCard({ workshop }: { workshop: Workshop }) {
     <TouchableOpacity
       style={styles.card}
       activeOpacity={0.8}
-      onPress={() => router.push(`/tabs/workshops/${workshop._id ?? workshop.id}` as any)}
+      onPress={() => router.push(`/customer/workshops/${workshop._id ?? workshop.id}` as any)}
     >
       {/* ICON + INFO */}
       <View style={styles.topRow}>

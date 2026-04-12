@@ -1,11 +1,12 @@
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import Animated, { 
-  useAnimatedStyle, 
-  withSpring, 
-  useSharedValue, 
-  interpolate 
+import Animated, {
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  useSharedValue,
+  Easing,
 } from 'react-native-reanimated';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,18 +21,24 @@ interface CustomTabBarProps extends BottomTabBarProps {
 export function CustomTabBar({ state, descriptors, navigation, icons, labels }: CustomTabBarProps) {
   const { theme } = useUnistyles();
   const insets = useSafeAreaInsets();
-  
-  const totalTabs = state.routes.length;
-  const tabWidth = SCREEN_WIDTH / totalTabs;
-  
-  // Shared value for sliding indicator
-  const translateX = useSharedValue(state.index * tabWidth);
+
+  // Only count routes shown in the tab bar (exclude href:null hidden routes)
+  const visibleRoutes = state.routes.filter(r => (descriptors[r.key].options as any).href !== null);
+  const totalTabs = visibleRoutes.length;
+  const tabWidth  = SCREEN_WIDTH / totalTabs;
+
+  // Map the focused route index → visible index for the sliding pill
+  const visibleIndex = visibleRoutes.findIndex(r => r.key === state.routes[state.index]?.key);
+  const activeIdx    = visibleIndex >= 0 ? visibleIndex : 0;
+
+  const translateX = useSharedValue(activeIdx * tabWidth);
 
   useEffect(() => {
-    translateX.value = withSpring(state.index * tabWidth, {
-      damping: 18,
-      stiffness: 120,
-      mass: 0.8,
+    const idx = visibleRoutes.findIndex(r => r.key === state.routes[state.index]?.key);
+    translateX.value = withSpring((idx >= 0 ? idx : 0) * tabWidth, {
+      damping: 20,
+      stiffness: 140,
+      mass: 0.7,
     });
   }, [state.index, tabWidth]);
 
@@ -40,26 +47,28 @@ export function CustomTabBar({ state, descriptors, navigation, icons, labels }: 
     width: tabWidth,
   }));
 
+  const TAB_HEIGHT = 64;
+
   return (
     <View style={[
-      styles.container, 
-      { 
-        height: 64 + insets.bottom, 
-        paddingBottom: insets.bottom > 0 ? insets.bottom - 4 : 0 
-      }
+      styles.container,
+      { height: TAB_HEIGHT + insets.bottom, paddingBottom: insets.bottom > 0 ? insets.bottom - 4 : 0 },
     ]}>
-      {/* Sliding Active Indicator */}
-      <Animated.View style={[styles.indicatorWrapper, indicatorStyle]}>
+      {/* Sliding active background pill */}
+      <Animated.View style={[styles.indicatorWrapper, indicatorStyle, { height: TAB_HEIGHT }]}>
         <View style={styles.activePill} />
       </Animated.View>
 
-      {/* Tab Items */}
+      {/* Tab items — only visible routes */}
       <View style={styles.tabsRow}>
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
+          // Skip hidden routes
+          if ((options as any).href === null) return null;
+
           const isFocused = state.index === index;
-          const Icon = icons[route.name];
-          const label = labels[route.name] || route.name;
+          const Icon      = icons[route.name];
+          const label     = labels[route.name] ?? route.name;
 
           const onPress = () => {
             const event = navigation.emit({
@@ -67,42 +76,84 @@ export function CustomTabBar({ state, descriptors, navigation, icons, labels }: 
               target: route.key,
               canPreventDefault: true,
             });
-
             if (!isFocused && !event.defaultPrevented) {
               navigation.navigate(route.name);
             }
           };
 
           return (
-            <TouchableOpacity
+            <TabItem
               key={route.key}
+              Icon={Icon}
+              label={label}
+              isFocused={isFocused}
+              brandColor={theme.colors.brand}
               onPress={onPress}
-              style={styles.tabItem}
-              activeOpacity={0.7}
-            >
-              <View style={styles.iconContainer}>
-                <Icon
-                  size={20}
-                  strokeWidth={isFocused ? 2.5 : 2}
-                  color={isFocused ? theme.colors.brand : '#9CA3AF'}
-                />
-                <Text style={[
-                  styles.label, 
-                  { 
-                    color: isFocused ? theme.colors.brand : theme.colors.muted,
-                    fontWeight: isFocused ? '800' : '600'
-                  }
-                ]}>
-                  {label}
-                </Text>
-              </View>
-            </TouchableOpacity>
+            />
           );
         })}
       </View>
     </View>
   );
 }
+
+// ── Individual tab item with its own scale animation ────────────────────────
+
+interface TabItemProps {
+  Icon: any;
+  label: string;
+  isFocused: boolean;
+  brandColor: string;
+  onPress: () => void;
+}
+
+function TabItem({ Icon, label, isFocused, brandColor, onPress }: TabItemProps) {
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (isFocused) {
+      scale.value = withTiming(1.12, { duration: 120, easing: Easing.out(Easing.quad) }, () => {
+        scale.value = withTiming(1, { duration: 100 });
+      });
+    }
+  }, [isFocused]);
+
+  const animatedIcon = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <TouchableOpacity
+      style={styles.tabItem}
+      onPress={onPress}
+      activeOpacity={0.75}
+    >
+      <View style={styles.iconContainer}>
+        <Animated.View style={animatedIcon}>
+          {Icon && (
+            <Icon
+              size={22}
+              strokeWidth={isFocused ? 2.5 : 1.8}
+              color={isFocused ? brandColor : '#9CA3AF'}
+            />
+          )}
+        </Animated.View>
+        <Text style={[
+          styles.label,
+          {
+            color:      isFocused ? brandColor : '#9CA3AF',
+            fontWeight: isFocused ? '800' : '500',
+            opacity:    isFocused ? 1 : 0.75,
+          },
+        ]}>
+          {label}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+// ── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create((theme) => ({
   container: {
@@ -117,21 +168,20 @@ const styles = StyleSheet.create((theme) => ({
     elevation: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
   },
   indicatorWrapper: {
     position: 'absolute',
     top: 0,
-    height: 64, // Matches base height before insets
     alignItems: 'center',
     justifyContent: 'center',
   },
   activePill: {
-    width: 60,
-    height: 48,
-    borderRadius: 16,
-    backgroundColor: 'rgba(245,110,15,0.08)',
+    width: 56,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(245,110,15,0.09)',
   },
   tabsRow: {
     flexDirection: 'row',
@@ -145,12 +195,12 @@ const styles = StyleSheet.create((theme) => ({
   iconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    height: 48,
+    height: 52,
+    gap: 3,
   },
   label: {
-    fontSize: 9,
-    marginTop: 4,
+    fontSize: 10,
+    letterSpacing: 0.2,
     textTransform: 'uppercase',
-    letterSpacing: 0.3,
   },
 }));
