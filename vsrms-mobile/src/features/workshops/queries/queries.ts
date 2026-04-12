@@ -14,7 +14,8 @@ export function useNearbyWorkshops(params?: Record<string, any>) {
   return useQuery({
     queryKey: [...workshopKeys.nearby(), params],
     queryFn:  () => fetchNearbyWorkshops(params),
-    staleTime: 5 * 60 * 1000, 
+    staleTime: 5 * 60 * 1000,
+    enabled:  !!params,
   });
 }
 

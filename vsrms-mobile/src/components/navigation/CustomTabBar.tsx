@@ -60,6 +60,7 @@ export function CustomTabBar({ state, descriptors, navigation, icons, labels }: 
           const isFocused = state.index === index;
           const Icon = icons[route.name];
           const label = labels[route.name] || route.name;
+          if ((options as any).href === null) return null;
 
           const onPress = () => {
             const event = navigation.emit({
@@ -81,11 +82,13 @@ export function CustomTabBar({ state, descriptors, navigation, icons, labels }: 
               activeOpacity={0.7}
             >
               <View style={styles.iconContainer}>
-                <Icon
-                  size={20}
-                  strokeWidth={isFocused ? 2.5 : 2}
-                  color={isFocused ? theme.colors.brand : '#9CA3AF'}
-                />
+                {Icon && (
+                  <Icon
+                    size={20}
+                    strokeWidth={isFocused ? 2.5 : 2}
+                    color={isFocused ? theme.colors.brand : '#9CA3AF'}
+                  />
+                )}
                 <Text style={[
                   styles.label, 
                   { 
@@ -123,7 +126,7 @@ const styles = StyleSheet.create((theme) => ({
   indicatorWrapper: {
     position: 'absolute',
     top: 0,
-    height: 64, // Matches base height before insets
+    height: 64,
     alignItems: 'center',
     justifyContent: 'center',
   },
