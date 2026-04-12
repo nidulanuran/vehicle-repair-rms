@@ -2,22 +2,24 @@ import React from 'react';
 import { Tabs, Redirect } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { View } from 'react-native';
-import { Home, Search, CarFront, CalendarDays } from 'lucide-react-native';
+import { Home, MapPin, Car, CalendarCheck, Settings } from 'lucide-react-native';
 import { CustomTabBar } from '@/components/navigation/CustomTabBar';
 import { useUnistyles } from 'react-native-unistyles';
 
 const ICONS = {
-  index: Home,
-  workshops: Search,
-  vehicles: CarFront,
-  schedule: CalendarDays,
+  index:     Home,
+  workshops: MapPin,
+  vehicles:  Car,
+  schedule:  CalendarCheck,
+  settings:  Settings,
 };
 
 const LABELS = {
-  index: 'Home',
-  workshops: 'Garages',
-  vehicles: 'Vehicles',
-  schedule: 'Schedule',
+  index:     'Home',
+  workshops: 'Find',
+  vehicles:  'Vehicles',
+  schedule:  'Schedule',
+  settings:  'Settings',
 };
 
 export default function TabsLayout() {
@@ -43,8 +45,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="workshops" />
       <Tabs.Screen name="vehicles" />
       <Tabs.Screen name="schedule" />
-      {/* Hidden routes — not in tab bar */}
-      <Tabs.Screen name="settings" options={{ href: null }} />
+      <Tabs.Screen name="settings" />
     </Tabs>
   );
 }

@@ -169,28 +169,30 @@ export function NearbyWorkshopsScreen() {
         {/* List overlay (sits on top of the map when active) */}
         {viewMode === 'list' && (
           <View style={styles.listOverlay}>
-            <FlashList
-              data={workshops as any}
-              renderItem={({ item }: any) => <WorkshopCard workshop={item} />}
-              estimatedItemSize={220}
-              onRefresh={refetch}
-              refreshing={isLoading}
-              keyExtractor={(item: any) => item._id || item.id || Math.random().toString()}
-              contentContainerStyle={styles.listContent}
-              ListEmptyComponent={
-                <View style={styles.emptyContainer}>
-                  <EmptyState
-                    message={
-                      isLoading
-                        ? 'Finding workshops near you…'
-                        : locationError
-                        ? 'Enable location to find nearby garages.'
-                        : 'No garages found in this area.'
-                    }
-                  />
-                </View>
-              }
-            />
+            {(FlashList as any) && (
+              <FlashList
+                data={workshops as any}
+                renderItem={({ item }: any) => <WorkshopCard workshop={item} />}
+                estimatedItemSize={220}
+                onRefresh={refetch}
+                refreshing={isLoading}
+                keyExtractor={(item: any) => item._id || item.id || Math.random().toString()}
+                contentContainerStyle={styles.listContent}
+                ListEmptyComponent={
+                  <View style={styles.emptyContainer}>
+                    <EmptyState
+                      message={
+                        isLoading
+                          ? 'Finding workshops near you…'
+                          : locationError
+                          ? 'Enable location to find nearby garages.'
+                          : 'No garages found in this area.'
+                      }
+                    />
+                  </View>
+                }
+              />
+            )}
           </View>
         )}
       </View>

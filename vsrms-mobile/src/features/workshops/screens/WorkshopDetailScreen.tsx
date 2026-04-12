@@ -156,7 +156,7 @@ export function WorkshopDetailScreen({ id: propId }: { id?: string }) {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Customer Reviews</Text>
               {reviews.slice(0, 3).map((r, i) => (
-                <ReviewCard key={r._id || r.id || i} review={r} />
+                <ReviewCard key={r._id || i} review={r} />
               ))}
               {reviews.length > 3 ? (
                 <Text style={styles.moreReviews}>+{reviews.length - 3} more reviews</Text>

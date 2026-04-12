@@ -1,18 +1,18 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { LayoutDashboard, Warehouse, Users } from 'lucide-react-native';
+import { LayoutDashboard, Building2, Users } from 'lucide-react-native';
 import { CustomTabBar } from '@/components/navigation/CustomTabBar';
 
 const ICONS = {
-  index: LayoutDashboard,
-  garages: Warehouse,
-  users: Users,
+  index:   LayoutDashboard,
+  garages: Building2,
+  users:   Users,
 };
 
 const LABELS = {
-  index: 'Dashboard',
+  index:   'Overview',
   garages: 'Garages',
-  users: 'Users',
+  users:   'Users',
 };
 
 export default function AdminLayout() {
