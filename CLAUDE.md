@@ -63,7 +63,8 @@ vehicle-repair-rms/
       app/                         Expo Router pages
         auth/login.tsx, register.tsx
         tabs/                      Customer tabs (index, vehicles/, workshops/, schedule)
-        owner/                     Workshop owner (index, bookings, jobs, create-record)
+        owner/                     Workshop owner (index, bookings, jobs, logs, staff, settings)
+          workshops/               Owner workshop management (list, [id])
         technician/                Staff (index, appointments, record, tracker)
         admin/                     Admin (index, garages, users)
       features/                    Feature-slice domains
@@ -125,13 +126,17 @@ M2 wires it for vehicle images. M3 wires it for workshop images. Both own/explai
 ### Workshops (M3)
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
-| POST | /workshops | Admin | Create workshop. |
+| POST | /workshops | Admin/Owner | Create workshop. |
 | GET | /workshops | Public | Paginated. Optional ?district= filter. |
 | GET | /workshops/nearby | Public | ?lat=&lng=&maxKm= (default 50km). Up to 20 results by distance. |
+| GET | /workshops/mine | Owner/Admin | List own workshops. |
 | GET | /workshops/:id | Public | Single workshop. |
-| PUT | /workshops/:id | Admin | Update workshop. |
-| DELETE | /workshops/:id | Admin | Hard delete. |
-| POST | /workshops/:id/image | Admin | Multer + R2 upload. |
+| PUT | /workshops/:id | Owner/Admin | Update workshop. Ownership enforced. |
+| DELETE | /workshops/:id | Admin | Soft delete (active:false). |
+| POST | /workshops/:id/image | Owner/Admin | Multer + R2 upload. |
+| GET | /workshops/:id/technicians | Owner/Admin | List assigned technicians. |
+| POST | /workshops/:id/technicians | Owner | Add technician to workshop. |
+| DELETE | /workshops/:id/technicians/:userId | Owner | Remove technician from workshop. |
 
 **CRITICAL**: `/workshops/nearby` MUST be registered BEFORE `/:id` in the route file.
 
@@ -261,7 +266,7 @@ Staff/Admin: can access records for any vehicle.
 |-------|---------|
 | User | unique on `asgardeoSub`, unique on `email` |
 | Vehicle | `ownerId`, unique `registrationNo`, `deletedAt` |
-| Workshop | `2dsphere` on `location`, `district`, desc `averageRating` |
+| Workshop | `2dsphere` on `location`, `district`, desc `averageRating`, `ownerId`, `active` |
 | Appointment | `userId`, `workshopId`, `vehicleId`, `status`, compound `(workshopId, scheduledDate)` |
 | ServiceRecord | `vehicleId`, `appointmentId` |
 | Review | `workshopId`, `userId`, unique compound `(workshopId, userId)` — one review per user per workshop |
@@ -394,7 +399,7 @@ EXPO_PUBLIC_API_URL     Full backend URL including /api/v1 (e.g. https://vsrms.o
 | Role | Default route | Can access |
 |------|--------------|------------|
 | `customer` | `/tabs` | tabs/ (profile, vehicles, workshops, schedule) |
-| `workshop_owner` | `/owner` | owner/ (dashboard, bookings, jobs, create-record) |
+| `workshop_owner` | `/owner` | owner/ (dashboard, bookings, jobs, workshops, staff, logs) |
 | `workshop_staff` | `/technician` | technician/ (dashboard, appointments, record, tracker) |
 | `admin` | `/admin` | admin/ (dashboard, garages, users) |
 
