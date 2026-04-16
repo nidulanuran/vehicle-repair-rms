@@ -6,9 +6,12 @@ import { FlashList } from '@shopify/flash-list';
 import { useUnistyles } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { useWorkshopReviews } from '../queries/queries';
+import { useUpdateReview, useDeleteReview } from '../queries/mutations';
 import { ReviewCard } from '../components/ReviewCard';
+import { ReviewFormModal } from '../components/ReviewFormModal';
 import { ReviewFilterBar, ReviewSortOption } from '../components/ReviewFilterBar';
 import { ErrorScreen } from '@/components/feedback/ErrorScreen';
+import { Review } from '../types/reviews.types';
 
 export function WorkshopReviewsScreen() {
   const { workshopId, name } = useLocalSearchParams<{ workshopId: string; name?: string }>();
@@ -23,6 +26,21 @@ export function WorkshopReviewsScreen() {
     refetch,
     isInitialLoading 
   } = useWorkshopReviews(workshopId ?? '', { sort: activeSort });
+
+  const { mutate: updateReview, isPending: updatingReview } = useUpdateReview();
+  const { mutate: deleteReview } = useDeleteReview();
+
+  const [editingReview, setEditingReview] = useState<Review | null>(null);
+
+  const handleEdit = (review: Review) => setEditingReview(review);
+  const handleDelete = (review: Review) => deleteReview(review.id);
+  const handleSubmit = (rating: number, text: string) => {
+    if (!editingReview) return;
+    updateReview(
+      { id: editingReview.id, payload: { rating, reviewText: text } },
+      { onSuccess: () => setEditingReview(null) }
+    );
+  };
 
   if (isInitialLoading) {
     return (
@@ -57,7 +75,11 @@ export function WorkshopReviewsScreen() {
         data={reviews}
         renderItem={({ item }) => (
           <View style={styles.cardWrapper}>
-            <ReviewCard review={item} />
+            <ReviewCard 
+              review={item} 
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
           </View>
         )}
         keyExtractor={(item) => item.id}
@@ -73,6 +95,14 @@ export function WorkshopReviewsScreen() {
             </Text>
           </View>
         }
+      />
+      <ReviewFormModal 
+        visible={!!editingReview}
+        onClose={() => setEditingReview(null)}
+        onSubmit={handleSubmit}
+        isSubmitting={updatingReview}
+        initialData={editingReview}
+        workshopName={name}
       />
     </ScreenWrapper>
   );

@@ -236,7 +236,7 @@
 - [x] `features/reviews/components/ReviewCard.tsx` — avatar with initials, individual stars, populated userId name, `reviewText` display fixed
 - [x] `features/reviews/screens/ReviewListScreen.tsx`
 - [x] Create review form — Write Review modal inside `WorkshopDetailScreen` (star-tap rating + optional text, submits via `useCreateReview`, customer role only)
-- [ ] Edit/delete own review UI
+- [x] Edit/delete own review UI
 
 ---
 

@@ -1,7 +1,7 @@
 'use strict';
 
 const mongoose = require('mongoose');
-const Review   = require('../models/Review');
+const Review = require('../models/Review');
 const Workshop = require('../models/Workshop');
 
 /**
@@ -11,9 +11,36 @@ const Workshop = require('../models/Workshop');
  * Uses a single aggregation — acceptable on M0 free tier (one write per user action).
  */
 const recalculateRating = async (workshopId) => {
+  const sixtyDaysAgo = new Date();
+  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
   const result = await Review.aggregate([
     { $match: { workshopId: new mongoose.Types.ObjectId(workshopId) } },
-    { $group: { _id: '$workshopId', avg: { $avg: '$rating' }, count: { $sum: 1 } } },
+    {
+      $addFields: {
+        weight: {
+          $cond: {
+            if: { $gte: ['$createdAt', sixtyDaysAgo] },
+            then: 1.0,
+            else: 0.5,
+          },
+        },
+      },
+    },
+    {
+      $group: {
+        _id:         '$workshopId',
+        weightedSum: { $sum: { $multiply: ['$rating', '$weight'] } },
+        totalWeight: { $sum: '$weight' },
+        totalCount:  { $sum: 1 },
+      },
+    },
+    {
+      $project: {
+        avg:   { $divide: ['$weightedSum', '$totalWeight'] },
+        count: '$totalCount',
+      },
+    },
   ]);
 
   const avg   = result.length ? Math.round(result[0].avg * 10) / 10 : 0;

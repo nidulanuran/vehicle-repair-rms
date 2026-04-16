@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { useUnistyles } from 'react-native-unistyles';
 
-export type ReviewSortOption = 'newest' | 'highest' | 'lowest';
+export type ReviewSortOption = 'newest' | 'oldest' | 'highest' | 'lowest';
 
 interface ReviewFilterBarProps {
   activeSort: ReviewSortOption;
@@ -16,6 +16,7 @@ export function ReviewFilterBar({ activeSort, onSortChange, total }: ReviewFilte
 
   const options: { label: string; value: ReviewSortOption; icon: keyof typeof Ionicons.glyphMap }[] = [
     { label: 'Newest', value: 'newest', icon: 'time-outline' },
+    { label: 'Oldest', value: 'oldest', icon: 'calendar-outline' },
     { label: 'Top Rated', value: 'highest', icon: 'trending-up-outline' },
     { label: 'Lowest Rated', value: 'lowest', icon: 'trending-down-outline' },
   ];

@@ -1,14 +1,14 @@
 'use strict';
 
-const Review    = require('../models/Review');
-const { AppError }          = require('../middleware/errorHandler');
+const Review = require('../models/Review');
+const { AppError } = require('../middleware/errorHandler');
 const { recalculateRating } = require('../utils/reviewHelper');
 
 // ── Pagination helper ─────────────────────────────────────────────────────────
 const paginate = (query) => {
-  const page  = Math.max(1, parseInt(query.page)  || 1);
+  const page = Math.max(1, parseInt(query.page) || 1);
   const limit = Math.min(100, parseInt(query.limit) || 20);
-  const skip  = (page - 1) * limit;
+  const skip = (page - 1) * limit;
   return { page, limit, skip };
 };
 
@@ -23,8 +23,9 @@ const getWorkshopReviews = async (req, res, next) => {
 
     // Build sort object
     let sortObj = { createdAt: -1 }; // Default: newest
+    if (sort === 'oldest') sortObj = { createdAt: 1 };
     if (sort === 'highest') sortObj = { rating: -1, createdAt: -1 };
-    if (sort === 'lowest')  sortObj = { rating: 1,  createdAt: -1 };
+    if (sort === 'lowest') sortObj = { rating: 1, createdAt: -1 };
 
     const [data, total] = await Promise.all([
       Review.find(filter).populate('userId', 'fullName').skip(skip).limit(limit).sort(sortObj),
@@ -47,8 +48,9 @@ const getMyReviews = async (req, res, next) => {
 
     // Build sort object
     let sortObj = { createdAt: -1 }; // Default: newest
+    if (sort === 'oldest') sortObj = { createdAt: 1 };
     if (sort === 'highest') sortObj = { rating: -1, createdAt: -1 };
-    if (sort === 'lowest')  sortObj = { rating: 1,  createdAt: -1 };
+    if (sort === 'lowest') sortObj = { rating: 1, createdAt: -1 };
 
     const [data, total] = await Promise.all([
       Review.find(filter).skip(skip).limit(limit).sort(sortObj),
@@ -108,7 +110,7 @@ const updateReview = async (req, res, next) => {
       throw new AppError('Forbidden — you do not own this review', 403);
     }
 
-    if (req.body.rating    !== undefined) review.rating     = req.body.rating;
+    if (req.body.rating !== undefined) review.rating = req.body.rating;
     if (req.body.reviewText !== undefined) review.reviewText = req.body.reviewText;
 
     await review.save();
