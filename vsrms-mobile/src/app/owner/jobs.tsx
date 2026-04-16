@@ -14,8 +14,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 
 function JobCard({ job }: { job: Appointment }) {
   const router = useRouter();
-  const customerName = typeof job.userId === 'object' ? job.userId.fullName : 'Customer';
-  const vehicleName = typeof job.vehicleId === 'object' ? `${job.vehicleId.make} ${job.vehicleId.model}` : 'Vehicle';
+  const customerName = job.userId && typeof job.userId === 'object' ? job.userId.fullName : 'Customer';
+  const vehicleName = job.vehicleId && typeof job.vehicleId === 'object' ? `${job.vehicleId.make} ${job.vehicleId.model}` : 'Vehicle';
 
   return (
     <View style={styles.card}>
@@ -24,7 +24,7 @@ function JobCard({ job }: { job: Appointment }) {
           <Ionicons name="construct-outline" size={24} color="#F56E0F" />
         </View>
         <View style={styles.jobMain}>
-          {typeof job.workshopId === 'object' && (job.workshopId as any)?.name && (
+          {job.workshopId && typeof job.workshopId === 'object' && (job.workshopId as any)?.name && (
             <Text style={styles.cardWorkshopName}>{(job.workshopId as any).name}</Text>
           )}
           <Text style={styles.jobTitle}>{customerName}</Text>
@@ -42,8 +42,8 @@ function JobCard({ job }: { job: Appointment }) {
         <TouchableOpacity 
           style={styles.completeBtn}
           onPress={() => {
-            const vid = typeof job.vehicleId === 'object' ? (job.vehicleId as any)._id || (job.vehicleId as any).id : job.vehicleId;
-            const wid = typeof job.workshopId === 'object' ? (job.workshopId as any)._id || (job.workshopId as any).id : job.workshopId;
+            const vid = job.vehicleId && typeof job.vehicleId === 'object' ? (job.vehicleId as any)._id || (job.vehicleId as any).id : job.vehicleId;
+            const wid = job.workshopId && typeof job.workshopId === 'object' ? (job.workshopId as any)._id || (job.workshopId as any).id : job.workshopId;
             
             router.push({ 
               pathname: '/owner/create-record', 
@@ -85,7 +85,7 @@ export default function OwnerJobsScreen() {
   
     const workshopName = (!targetWorkshopId || targetWorkshopId === 'all') 
       ? 'All Active Jobs' 
-      : (typeof workshop === 'object' ? (workshop as any).name : 'Active Jobs');
+      : (workshop && typeof workshop === 'object' ? (workshop as any).name : 'Active Jobs');
   
     return (
       <ScreenWrapper bg="#1A1A2E">
@@ -117,6 +117,7 @@ export default function OwnerJobsScreen() {
           <FlashList
              data={appointments as Appointment[]}
              renderItem={({ item }) => <JobCard job={item as Appointment} />}
+             // @ts-expect-error - FlashList requires estimatedItemSize dynamically
              estimatedItemSize={120}
              onRefresh={refetch}
              refreshing={isLoading}

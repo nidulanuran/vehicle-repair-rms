@@ -20,15 +20,15 @@ function BookingCard({
   appt: Appointment;
   onStatusChange: (id: string, s: string) => void
 }) {
-  const customerName = typeof appt.userId === 'object' ? appt.userId.fullName : 'Customer';
-  const vehicleName = typeof appt.vehicleId === 'object' ? `${appt.vehicleId.make} ${appt.vehicleId.model}` : 'Vehicle';
+  const customerName = appt.userId && typeof appt.userId === 'object' ? appt.userId.fullName : 'Customer';
+  const vehicleName = appt.vehicleId && typeof appt.vehicleId === 'object' ? `${appt.vehicleId.make} ${appt.vehicleId.model}` : 'Vehicle';
 
   return (
     <View style={styles.card}>
       <View style={styles.cardMain}>
         <View style={styles.cardHeader}>
           <View style={styles.infoCol}>
-            {typeof appt.workshopId === 'object' && (appt.workshopId as any)?.name && (
+            {appt.workshopId && typeof appt.workshopId === 'object' && (appt.workshopId as any)?.name && (
               <Text style={styles.cardWorkshopName}>{(appt.workshopId as any).name}</Text>
             )}
             <Text style={styles.custName}>{customerName}</Text>
@@ -91,7 +91,10 @@ export default function BookingsScreen() {
   const { user } = useAuth();
   const [status, setStatus] = useState<'pending' | 'confirmed' | 'completed' | 'cancelled'>('pending');
 
-  const { data, isLoading, isError, refetch } = useWorkshopAppointments(user?.workshopId, status);
+  const targetWorkshopId = useMemo(() => paramWorkshopId || 'all', [paramWorkshopId]);
+  const { data: workshop } = useWorkshop(targetWorkshopId && targetWorkshopId !== 'all' ? targetWorkshopId : '');
+
+  const { data, isLoading, isError, refetch } = useWorkshopAppointments(targetWorkshopId, status);
   const { mutate: updateStatus } = useUpdateAppointmentStatus();
 
   // Deduplicate by id — guards against backend returning same appointment twice
@@ -111,7 +114,7 @@ export default function BookingsScreen() {
 
   const workshopName = (!targetWorkshopId || targetWorkshopId === 'all')
     ? 'All Workshops'
-    : (typeof workshop === 'object' ? (workshop as any).name : 'Workshop');
+    : (workshop && typeof workshop === 'object' ? (workshop as any).name : 'Workshop');
 
   return (
     <ScreenWrapper bg="#1A1A2E">

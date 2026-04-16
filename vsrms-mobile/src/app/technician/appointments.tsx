@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, StatusBar, ScrollView } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native-unistyles';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { useAuth } from '@/hooks';
@@ -19,8 +20,8 @@ function ApptCard({
   appt: Appointment;
   onAccept: (id: string) => void
 }) {
-  const customerName = typeof appt.userId === 'object' ? appt.userId.fullName : 'Customer';
-  const vehicleName = typeof appt.vehicleId === 'object' ? `${appt.vehicleId.make} ${appt.vehicleId.model}` : 'Vehicle';
+  const customerName = appt.userId && typeof appt.userId === 'object' ? appt.userId.fullName : 'Customer';
+  const vehicleName = appt.vehicleId && typeof appt.vehicleId === 'object' ? `${appt.vehicleId.make} ${appt.vehicleId.model}` : 'Vehicle';
 
   return (
     <View style={styles.card}>
@@ -50,8 +51,9 @@ function ApptCard({
 
 export default function TechnicianAppointmentsScreen() {
   const router = useRouter();
+  const { status: initialStatus } = useLocalSearchParams<{ status: 'pending' | 'confirmed' | 'completed' }>();
   const { user } = useAuth();
-  const [status, setStatus] = useState<'pending' | 'confirmed' | 'completed'>('pending');
+  const [status, setStatus] = useState<'pending' | 'confirmed' | 'completed'>(initialStatus || 'pending');
 
   const { data, isLoading, isError, refetch } = useWorkshopAppointments(user?.workshopId, status);
   const { mutate: updateStatus } = useUpdateAppointmentStatus();
@@ -66,19 +68,6 @@ export default function TechnicianAppointmentsScreen() {
       return true;
     });
   }, [data]);
-
-  // Smart Switching logic
-  React.useEffect(() => {
-    if (!initialStatus && !pLoad && !cLoad && !iLoadCount) {
-      if ((pData?.length ?? 0) === 0) {
-        if ((iData?.length ?? 0) > 0) {
-          setStatus('in_progress');
-        } else if ((cData?.length ?? 0) > 0) {
-          setStatus('confirmed');
-        }
-      }
-    }
-  }, [pLoad, cLoad, iLoadCount, pData, cData, iData, initialStatus]);
 
   // Handle incoming status from params
   React.useEffect(() => {
@@ -212,4 +201,15 @@ const styles = StyleSheet.create((theme) => ({
     paddingTop: 24,
     paddingBottom: 130
   },
+  
+  card: { backgroundColor: '#FFFFFF', borderRadius: 24, marginBottom: 16, borderWidth: 1.5, borderColor: '#F3F4F6', overflow: 'hidden' },
+  cardBody: { padding: 18 },
+  statusRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  pill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  pillText: { fontSize: 9, fontWeight: '800' },
+  dateText: { fontSize: 12, fontWeight: '700', color: '#6B7280' },
+  serviceTitle: { fontSize: 16, fontWeight: '900', color: '#1A1A2E', marginBottom: 4 },
+  ownerText: { fontSize: 13, color: '#6B7280', fontWeight: '600' },
+  acceptBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F56E0F', paddingVertical: 14, gap: 8 },
+  acceptText: { fontSize: 14, fontWeight: '800', color: '#FFFFFF' },
 }));
